@@ -10,7 +10,7 @@ struct Node {
 
 int value_at(struct Node* head, int i);
 void push(struct Node** head, int data);
-void pop(struct Node** head);
+int pop(struct Node** head);
 void printlist(struct Node* node);
 
 int main(void)
@@ -59,11 +59,17 @@ void push(struct Node** head_ref, int data)
 
 /* Uses reference to head of a list (pointer to pointer) to
    delete node in front. */
-void pop(struct Node** head_ref)
+int pop(struct Node** head_ref)
 {
+    if (*head_ref == NULL) {
+        printf("Index Error\n");
+        exit(1);
+    }
     struct Node* temp = *head_ref;
     *head_ref = (*head_ref)->next;
+    int i = temp->data;
     free(temp);
+    return i;
 }
 
 void printlist(struct Node* node)

@@ -1,4 +1,4 @@
-/* pop */
+/* pop removes front item and returns value */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,7 +9,7 @@ struct Node {
 };
 
 void push(struct Node** head, int data);
-void pop(struct Node** head);
+int pop(struct Node** head);
 void printlist(struct Node* node);
 
 int main(void)
@@ -20,8 +20,8 @@ int main(void)
         push(&head, i);
     printlist(head);
 
-    for (int i=0; i<3; i++)
-        pop(&head);
+    for (int i=0; i<11; i++)
+        printf("pop %i\n", pop(&head));
     printlist(head);
 
     return 0;
@@ -39,11 +39,17 @@ void push(struct Node** head_ref, int data)
 
 /* Uses reference to head of a list (pointer to pointer) to
    delete node in front. */
-void pop(struct Node** head_ref)
+int pop(struct Node** head_ref)
 {
+    if (*head_ref == NULL) {
+        printf("Index Error\n");
+        exit(1);
+    }
     struct Node* temp = *head_ref;
     *head_ref = (*head_ref)->next;
+    int i = temp->data;
     free(temp);
+    return i;
 }
 
 void printlist(struct Node* node)
