@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "array.h"
+#include "bst.h"
 
 void run_tests(void);
 
@@ -12,6 +12,15 @@ int main(void)
 
 void run_tests(void)
 {
+    test_new_node();
+    test_insert();
+    test_is_in_tree();
+    test_count();
+    test_height();
+    test_min();
+    test_max();
+    test_successor();
+    /*
     test_resize();
     test_append();
     test_push();
@@ -21,5 +30,5 @@ void run_tests(void)
     test_delete();
     test_update();
     test_find();
-    test_front();
+    */
 }

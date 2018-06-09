@@ -103,6 +103,16 @@ int find(struct IntArray* intArray, int x)
     return -1;
 }
 
+int front(struct IntArray* intArray)
+{
+    return *intArray->data;
+}
+
+int last(struct IntArray* intArray)
+{
+    return *(intArray->data + intArray->len - 1);
+}
+
 void print_array(struct IntArray* intArray)
 {
     for (int i=0; i<intArray->len; i++)
@@ -212,4 +222,14 @@ void test_find(void)
     int j = 5;
     int k = find(intArray, j);
     printf("Found %i at index %i\n", j, k);
+}
+void test_front(void)
+{
+    int len = 10;
+    struct IntArray* intArray = new_array(len);
+    printf("\nTest front\n");
+    for (int i=0; i<intArray->len; i++)
+        *(intArray->data+i) = intArray->len - i;
+    print_array(intArray);
+    printf("front, last: %d %d\n", front(intArray), last(intArray));
 }

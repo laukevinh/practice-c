@@ -15,6 +15,8 @@ void insert(struct IntArray* intArray, int i, int pos);
 void push(struct IntArray* intArray, int i);
 void delete(struct IntArray* intArray, int pos);
 void pop_front(struct IntArray* intArray);
+int front(struct IntArray* intArray);
+int last(struct IntArray* intArray);
 
 /* tests */
 void print_array(struct IntArray* intArray);
@@ -27,3 +29,5 @@ void test_insert(void);
 void test_delete(void);
 void test_update(void);
 void test_find(void);
+void test_front(void);
+void test_last(void);
