@@ -138,37 +138,50 @@ void print_stack(struct Stack* stack)
 
 int successor(struct Node* node, int i)
 {
-    //struct Node* successor = NULL;
-    // in order traversal
-    // stack all left
-    struct Stack* stack = new_stack(node);
-    for ( ; node->left != NULL; node = node->left)
+    /* Use stack for in order traversal of tree.
+       Once key is found, return the next largest.
+       Return -1 if key not found. */ 
+    struct Node* suc;
+    struct Node* curr;
+    struct Stack* stack;
+    int found = FALSE;
+
+    suc = new_node(-1); 
+    
+    // init stack with left most nodes
+    for (stack=new_stack(node); node->left!=NULL; node=node->left)
         append_stack(stack, node->left);
-    // crawl = pop stack
-    struct Node* curr = pop_stack(stack);
-    // if right exists, curr = right 
-    // if curr left exists, stack curr, curr go left
-    // else curr = pop stack
-    while (curr != NULL) {
-        printf("%d ", curr->data);
+
+    // pop stack to get min node
+    curr = pop_stack(stack);
+
+    /* If this node has key, successor might be right child,
+       children of right child, or parent of this node. This
+       node is min and does not have a left child. */
+    while (!found && curr != NULL) {
+        if (curr->data == i)
+            found = TRUE;
         curr = curr->right;
         if (curr != NULL) {
             while (curr->left != NULL) {
                 append_stack(stack, curr);
                 curr = curr->left;
             }
-            printf("%d ", curr->data);
+            if (found) {
+                suc = curr;
+            } else if (curr->data == i) {
+                found = TRUE;
+                suc = pop_stack(stack);
+            }
         }
+        if (found && suc->data < 0)
+            suc = pop_stack(stack);
         curr = pop_stack(stack);
     }
-    /*
-    if (curr->data == i)
-        successor = pop_stack(stack)->data;
-    */
-    // get next in stack
-    //print_stack(stack);
+
+    // clean up and return value
     delete_stack(stack);
-    //return successor;
+    return suc->data;
 }
 
 void print_in_order(struct Node* node)
@@ -266,13 +279,8 @@ void test_successor(void)
         insert(root, a[i]);
     print_in_order(root);
     printf("\nSuccessor: ");
-    /*
-    int s = successor(root, 5);
-    printf("(%d,%d) ", 5, s);
-    */
-    for (int i=5; i<9; i++)
-        //printf("(%d,%d) ", i, successor(root, i));
-        successor(root, i);
+    for (int i=5; i<11; i++)
+        printf("(%d,%d) ", i, successor(root, i));
     printf("\n");
     delete_tree(root);
 }
