@@ -15,6 +15,8 @@ void run_tests(void)
 {
     //test_heap();
     //test_get_children();
-    test_max_heapify();
+    //test_max_heapify();
+    //test_insert();
     test_pop_max();
+    //test_build_max_heap();
 }

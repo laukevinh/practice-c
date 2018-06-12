@@ -14,3 +14,5 @@ void test_heap(void);
 void test_get_children(void);
 void test_max_heapify(void);
 void test_pop_max(void);
+void test_insert(void);
+void test_build_max_heap(void);

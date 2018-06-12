@@ -117,34 +117,31 @@ int depth(int index)
     return log2(index + 1.00);
 }
 
-void max_heapify(struct Heap* heap)
+void max_heapify(struct Heap* heap, int index)
 {
-    /* start from index n/2 since all leaves
-       are max heaps. fix max heap property
-       level by level. first pass moves max
-       element to top, so second pass only 
-       needs to process up to 2nd level, third
-       pass up to 3rd level, etc.
+    /* assumes left and right children are max
+       heaps. fixes max heap property.
     */
-    int last_index, level_index, temp;
-    int *arr, *curr, *max;
-    last_index = heap->count-1;
-    arr = heap->data;
-    /* get index of first element in current level
-       and update after each pass
-    */
-    level_index = 0;
-    for (int h=heap->height; h>=0; h--) {
-        for (int i=parent_ind(last_index); i>=level_index; i--) {
-            curr = arr + i;
-            max = arr + get_index_lgr_child(heap, i);
-            if (*curr < *max) {
-                temp = *curr;
-                *curr = *max;
-                *max = temp;
-            }
+    if (index < (heap->count-1)/2) {
+        int *currpt, *childpt;
+        int childind, temp;
+        currpt = heap->data + index;
+        childind = get_index_lgr_child(heap, index);
+        childpt = heap->data + childind;
+        if (*currpt < *childpt) {
+            temp = *currpt;
+            *currpt = *childpt;
+            *childpt = temp;
+            max_heapify(heap, childind); 
         }
-        level_index = left_ind(level_index);
+    }
+}
+
+void build_max_heap(struct Heap* heap)
+{
+    int last_index = heap->count-1;
+    for (int i=parent_ind(last_index-1); i>=0; i--) {
+        max_heapify(heap, i);
     }
 }
 
@@ -165,7 +162,7 @@ int pop_max(struct Heap* heap)
     *ptfirst = *ptlast;
 
     resize(heap, heap->count - 1);
-    max_heapify(heap);
+    max_heapify(heap, 0);
     return max;
 }
 
@@ -175,7 +172,7 @@ void insert(struct Heap* heap, int i)
     resize(heap, heap->count + 1);
     int* ptlast = heap->data + heap->count - 1;
     *ptlast = i;
-    max_heapify(heap);
+    build_max_heap(heap);
 }
 
 void print_heap(struct Heap* heap)
@@ -215,6 +212,7 @@ void test_heap(void)
     for (int i=1; i<64; i+=40) {
         heap = new_heap(i);
         print_heap(heap);
+        print_heap_pyr(heap);
         delete_heap(heap);
     }
 }
@@ -246,8 +244,8 @@ void test_max_heapify(void)
     *(heap->data + 6) = 12;
     printf("Before\n");
     print_heap_pyr(heap);
-    max_heapify(heap);
     printf("After\n");
+    build_max_heap(heap);
     print_heap_pyr(heap);
     delete_heap(heap);
 }
@@ -264,7 +262,7 @@ void test_pop_max(void)
     *(heap->data + 4) = 2;
     *(heap->data + 5) = 7;
     *(heap->data + 6) = 12;
-    max_heapify(heap);
+    build_max_heap(heap);
     printf("Before:\n");
     print_heap_pyr(heap);
     printf("Pop max: %d\n", pop_max(heap));
@@ -272,9 +270,40 @@ void test_pop_max(void)
     printf("Insert 100\n");
     insert(heap, 100);
     print_heap_pyr(heap);
-    
+    printf("Insert 0..19\n");
     for (int i=0; i<20; i++)
         insert(heap, i);
     print_heap_pyr(heap);
+    printf("Pop 10 times\n");
+    for (int i=0; i<10; i++)
+        pop_max(heap);
+    print_heap_pyr(heap);
     delete_heap(heap);
+}
+
+void test_insert(void)
+{
+    printf("Test insert:\n");
+    struct Heap* heap = new_heap(31);
+    print_heap_pyr(heap);
+    printf("Insert 0..19\n");
+    for (int i=0; i<20; i++)
+        insert(heap, i);
+    print_heap_pyr(heap);
+} 
+
+void test_build_max_heap(void)
+{
+    printf("Test build max heap:\n");
+    struct Heap* heap;
+    int nodes;
+    for (int i=3; i<6; i++) {
+        nodes = pow(2, i+1) - 1;
+        heap = new_heap(nodes);
+        for (int j=0; j<nodes; j++)
+            *(heap->data+j) = j;
+        build_max_heap(heap);
+        print_heap_pyr(heap);
+        delete_heap(heap);
+    }
 }
