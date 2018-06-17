@@ -1,0 +1,94 @@
+/* Dictionaries should perform search,
+   insert, and delete in O(1) on average.
+   Worst case is O(n) in theory. This 
+   implementation uses chaining.
+
+   Given a key, dictionary should return a
+   value associated with key. This is done
+   in two steps: pre-hash and hashing. 
+   Pre-hash converts any key to an integer,
+   and hashing maps the integer to the table.
+
+   Given a universe of U keys, the set of all
+   n keys used at any time will be mapped to
+   m buckets in the table. The load factor
+   alpha == n/m. 
+
+   Assuming simple uniform hashing, where
+   any key has an equal chance to map to any
+   bucket, and is independent of where other
+   keys currently reside, we can assume that
+   search, insert and delete will occur in
+   O(1 + alpha).
+
+   For example, hash(x) == hash(y) == 1,
+   meaning there is a collision in bucket 1
+   of the table. By having a linked list in
+   bucket 1, we can chain both to bucket 1.
+*/
+
+/* Hashing functions: 3 methods
+
+   1) division
+
+        h(k) = k mod m
+
+      this could potentially be bad if k and m 
+      share the same factors, e.g. power of 2,
+      and so only half of the table is used.
+      e.g. initialize
+      int N[n] = { 0, 1, 4, 9, ... 9801 }   // N[n] = n^2 and n=100
+      int D[m] = { 0, 0 ... 0 }             // m = 26 
+      for each element k in N, increase D[h(k)] by 1
+      giving D == { 4, 7, 0, 8, 7, 0, 0, 0, 0, 0, 7, ... }
+
+      To avoid this problem, choose m that is prime
+      and not close to a number power of 2 or 10.
+
+   2) multiplication
+        
+        h(k) = [ (a * k) mod 2^w ] >> (w - r)
+
+        where w the word size of the computer (eg 32 or 64 bit)
+        a is a random number, preferably between 
+
+*/
+
+/* Hash table with chaining
+
+    hash table represented as array of pointers.
+    here, there are m=7 buckets, each accessible
+    by index. Collisions resolved by appending
+    as linkedlist.
+    
+
+        0      1      2      3      4      5      6   
+    +------------------------------------------------+
+    |      |      |      |      |      |      |      |
+    | x100 | NULL | x102 | NULL | x104 | x105 | x106 |
+    |      |      |      |      |      |      |      |
+    +------------------------------------------------+
+
+    hash(k1) == 4
+    hash(k2) == 6
+    hash(k3) == 4   
+
+    collision if k1 != k3, so chain. 
+    search: compare a[hash(k1)] key to k1. If incorrect,
+    move to next item in chain. If doesn't exist, return.
+
+
+        0      1      2      3      4      5      6   
+    +------------------------------------------------+
+    |      |      |      |      |      |      |      |
+    | x100 | NULL | x102 | NULL | x104 | x105 | x106 |
+    |      |      |      |      |      |      |      |
+    +-------------------------------|----------------+
+                                    |
+                                    v
+                                +------+
+                                |      |
+                                | xAAA |
+                                |      |
+                                +------+
+*/
