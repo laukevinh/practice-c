@@ -5,6 +5,7 @@ int main(void)
 {
     test_insertion_sort();
     test_merge_sort();
+    test_quick_sort();
 }
 
 void print_arr(int arr[], int len)
@@ -35,5 +36,17 @@ void test_merge_sort(void)
     print_arr(arr, len);
     printf("After : ");
     merge_sort(arr, 0, len);
+    print_arr(arr, len);
+}
+
+void test_quick_sort(void)
+{
+    int arr[9] = {3, 7, 8, 5, 2, 1, 9, 5, 4};
+    int len = 9;
+    printf("Quick sort\n");
+    printf("Before: ");
+    print_arr(arr, len);
+    printf("After : ");
+    quick_sort(arr, 0, len);
     print_arr(arr, len);
 }
