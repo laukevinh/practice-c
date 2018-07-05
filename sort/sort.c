@@ -1,25 +1,7 @@
-/*  bubble, quick, insertion, selection, merge, heap*/
-
-/*  Insertion sort
+/*  Sorting routines
     
-    For i = 1, 2, ... n
-    Insert A[i] into sorted array A[0:i-1]
-    by pairwise swaps down to the correct position
-    i.e. left < i < right
-
+    merge, quick, insertion, selection, heap?, bubble?
 */
-
-void insertion_sort(int arr[], int len)
-{
-    int temp;
-    for (int i=1; i<len; i++) {
-        for (int j=i; arr[j] < arr[j-1] && j>0; j--) {
-            temp = arr[j];
-            arr[j] = arr[j-1];
-            arr[j-1] = temp;
-        }
-    }
-}
 
 /*  Merge sort
 
@@ -28,6 +10,10 @@ void insertion_sort(int arr[], int len)
     Array is divided in half log n times (depth).
     Each time it merges, there is Theta(n) work, thus
     total time complexity is Theta(n log n).
+
+    n auxillary space is used during the merge routine.
+    Since merge routine occurs after the recursive calls,
+    space complexity is Theta(n).
 */
 
 void merge(int arr[], int low, int mid, int high)
@@ -77,10 +63,22 @@ void merge_sort(int arr[], int low, int high)
 
 /*  Quick sort
     
-    Select one element i from the array. Rearrange
-    the array so elements to the left are < i and
-    elements to the right are > i. Quick sort the
-    remaining left and right partitions.
+    Select one element p from the array. Rearrange
+    the array so elements to the left are < p and
+    elements to the right are > p. Quick sort the
+    remaining left and right parts without p.
+
+    Time complexity is O(n^2), such as when all 
+    elements are the same value. Each iteration
+    returns the array with just 1 less element to 
+    look at. Total work is n + (n-1) + (n-2) ... 1.
+
+    Improve expected running time by looking at 3
+    elements and set p to the median before sorting. 
+    This can be done by looking at values at positions
+    0, n/2, and n-1, then swap values so arr[n-1] is
+    the median. If array is arranged high to low, this 
+    preprocessing step reduces the number of compares.
 */
 
 void swap(int arr[], int i, int j)
@@ -96,27 +94,84 @@ int partition(int arr[], int low, int high)
     int i = low - 1;
     for (int j=low; j<high-1; j++)
         if (arr[j] < pivot) {
-            i++;
-            int temp = arr[i];
-            arr[i] = arr[j];
-            arr[j] = temp;
+            swap(arr, ++i, j);
         }
-    int temp = arr[i+1];
-    arr[i+1] = arr[high-1];
-    arr[high-1] = temp;
-    return i+1;
+    swap(arr, ++i, high-1);
+    return i;
 }
-            
+ 
+void preprocess(int arr[], int low, int high)
+{
+    high--;
+    int mid = low + (high-low)/2;
+    if (arr[high] > arr[low])
+        swap(arr, low, high);
+    if (arr[high] < arr[mid])
+        swap(arr, mid, high);
+    if (arr[high] > arr[low])
+        swap(arr, low, high);
+}
 
 void quick_sort(int arr[], int low, int high)
 {
     if (low < high) {
+        preprocess(arr, low, high);
         int p = partition(arr, low, high);
         quick_sort(arr, low, p);
         quick_sort(arr, p+1, high);
     }
 }
+
+/*  Insertion sort
+    
+    For i = 1, 2, ... n
+    Insert A[i] into sorted array A[0:i-1]
+    by pairwise swaps down to the correct position.
+    Similar to how you would sort a hand of cards.
+
+    Time complexity is O(n^2), such as when
+    array is sorted in reverse order. For arrays
+    that are almost sorted, time complexity is
+    minimized. Binary insertion sort can reduce the
+    number of compares by using binary search,
+    but the overall time required is still n^2 due
+    to the swaps.
+*/
+
+void insertion_sort(int arr[], int len)
+{
+    int temp;
+    for (int i=1; i<len; i++) {
+        for (int j=i; arr[j] < arr[j-1] && j>0; j--) {
+            temp = arr[j];
+            arr[j] = arr[j-1];
+            arr[j-1] = temp;
+        }
+    }
+}
+
 /*  selection sort
     
-    
+    Starting with i=0, find the smallest item 
+    from i to n, and swap with i. Repeat with
+    i+1, i+2, until complete.
+
+    Time complexity is Theta(n^2). Each iteration
+    only produces an array length 1 less than 
+    the previous, so n + (n-1) + (n-2) ... 1.
+
+    This is an in place sorting algorithm. It only
+    requires at most O(n) swaps, making it a
+    efficient when memory swaps are expensive.
 */
+
+void selection_sort(int arr[], int len)
+{
+    for (int i=0; i<len; i++) {
+        int min = i;
+        for (int j=i; j<len; j++)
+            if (arr[j] < arr[min])
+                min = j;
+        swap(arr, i, min);
+    }
+}
