@@ -175,3 +175,33 @@ void selection_sort(int arr[], int len)
         swap(arr, i, min);
     }
 }
+
+/*  bubble sort
+
+    Traverse array, swaping adjacent elements if not
+    in order. Repeat until there are no swaps in
+    one traversal.
+
+    Time complexity is O(n^2) since each iteration
+    traverses the entire array just to push the max 
+    element in each iteration to the top. There may be
+    as many iterations as there are elements, such as
+    a completely reversed array.
+*/
+
+void bubble_sort(int arr[], int len)
+{
+    int swap_ct = 1;
+    while (swap_ct > 0) {
+        swap_ct = 0;
+        for (int i=1; i<len; i++) {
+            if (arr[i] < arr[i-1]) {
+                swap(arr, i, i-1);
+                swap_ct++;
+            }
+        }
+    }
+}
+
+
+
