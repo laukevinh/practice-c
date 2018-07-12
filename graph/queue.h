@@ -1,7 +1,6 @@
 struct Node {
     struct AdjList * data;
     struct Node * next;
-    struct Node * prev;
 };
 
 struct Queue {
