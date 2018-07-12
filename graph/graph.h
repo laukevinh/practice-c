@@ -21,3 +21,4 @@ int connected(struct Graph * g, int v1, int v2);
 
 void test_adjacency_list(void);
 void test_bfs_1(void);
+void test_enqueue(void);

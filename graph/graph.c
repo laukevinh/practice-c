@@ -1,6 +1,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "graph.h"
+#include "queue.h"
+#define TRUE 1
+#define FALSE 0
 
 /*  Adjacency List representation
 
@@ -102,5 +105,27 @@ int bfs(struct Graph *g, int start, int dest)
 
 int connected(struct Graph * g, int v1, int v2)
 {
-    return 0;
+    struct Queue * q = new_queue(g->array+v1);
+
+    int discovered[g->nVertices];
+    for (int i=0; i<g->nVertices; i++)
+        discovered[i] = FALSE;
+    discovered[v1] = TRUE;
+
+    while (q->head != NULL) {
+        struct AdjList * curr = dequeue(q);
+        struct AdjListNode * crawl = curr->head;
+        while (crawl != NULL) {
+            if (crawl->data == v2) {
+                return TRUE;
+            }
+            if (!discovered[crawl->data]) {
+                enqueue(q, g->array+crawl->data);
+                discovered[crawl->data] = TRUE;
+            }
+            crawl = crawl->next;
+        }
+    }
+    delete_queue(q);
+    return FALSE;
 }
