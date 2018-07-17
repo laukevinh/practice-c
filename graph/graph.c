@@ -187,23 +187,23 @@ int bfs(struct Graph *g, int v1, int v2)
 
 /*  determine if graph has a cycle
 
-    Assumes graph has a cycle until proven false. First method
-    uses DFS to determine if graph is cyclic starting from a 
-    given vertex v. Vertex v is initally marked discovered and 
-    processed. Each neighbor is processed recursively. If a
-    neighbor has been discovered but is still marked processed,
+    Use two methods to determine if graph has cycle. First,
+    use DFS to determine if graph is cyclic starting from a 
+    given vertex v. Vertex v is initally marked discovered and
+    unprocessed. Each neighbor is visited recursively. If a
+    neighbor has been discovered and marked unprocessed,
     then there is a back edge and therefore a cycle. The key
-    is to unmark a vertex when it has 0 neighbors and return
-    up the stack.
+    is to mark a vertex processed when it has 0 neighbors and 
+    return up the stack.
 
     Acyclic graph example
 
-    Start at 0, mark it discovered and processed. Discover and
-    process 1, hit NULL, so mark 1 unprocessed. Then discover 
-    and process 2, seeing vertex 1 again. Check if vertex 1 
-    was marked processed. It was unmarked, so no cycles in
-    that branch and unmark 2 as well. 0 gets the signal and
-    unmarks itself.
+    Start at 0, mark it discovered and unprocessed. Discover 1,
+    mark unprocessed, no neighbors, so mark 1 processed. Then 
+    discover 2, mark unprocessed. Vertex 1 is neighbor, already
+    discovered. Since it has been processed, no cycles in that
+    branch. Vertex 2 has no more neighbors, so mark 2 as
+    processed. Vertex 0 gets signal and marks itself processed.
     
          +---+
       +--| 0 |--+
@@ -215,11 +215,10 @@ int bfs(struct Graph *g, int v1, int v2)
 
     Cyclic graph example
 
-    Start at 0, mark it discovered and processed. Discover and
-    process 1. Then discover and process 2. Seeing vertex 0 
-    again, check if it was marked processed. Vertex 0 is still 
-    marked processed. None of 0's neighbors have finished the 
-    recursion. Return TRUE up the call stack.
+    Start at 0, mark it discovered and unprocessed. Discover 1,
+    mark unprocessed. Then discover 2, mark unprocessed. 
+    Vertex 1 is neighbor, already discovered. Since 1 not yet
+    processed, there is a back edge. Return up the call stack.
 
          +---+
       +--| 0 |<-+
@@ -239,17 +238,17 @@ int is_cyclic_util(struct Graph * g, int v, int * discovered, int * processed)
     struct AdjList * curr = g->array+v;
     struct AdjListNode * crawl = curr->head;
     discovered[v] = TRUE;
-    processed[v] = TRUE;
+    processed[v] = FALSE;
     while (crawl != NULL) {
         if (!discovered[crawl->data]) {
             int finished = is_cyclic_util(g, crawl->data, discovered, processed);
             if (finished) return TRUE;
-        } else if (processed[crawl->data] == TRUE) {
+        } else if (processed[crawl->data] == FALSE) {
             return TRUE;
         }
         crawl = crawl->next;
     }
-    processed[v] = FALSE;
+    processed[v] = TRUE;
     return FALSE;
 }
 
@@ -262,8 +261,8 @@ int is_cyclic(struct Graph * g)
     int discovered[g->nVertices];
     int processed[g->nVertices];
     for (int i=0; i<g->nVertices; i++) {
-        discovered[i] = 0;
-        processed[i] = 0;
+        discovered[i] = FALSE;
+        processed[i] = FALSE;
     }
     for (int i=0; i<g->nVertices; i++) {
         int finished = is_cyclic_util(g, i, discovered, processed);
