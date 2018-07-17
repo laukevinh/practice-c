@@ -8,6 +8,7 @@ int main(void)
     //test_adjacency_list();
     test_shortest_path();
     test_is_cyclic();
+    test_topological_sort();
     //test_stack();
     return 0;
 }
@@ -126,8 +127,7 @@ void test_topological_sort(void)
     add_edge(g, 2, 1);
     add_edge(g, 2, 3);
     add_edge(g, 3, 4);
-    add_edge(g, 4, 1);
-    topological_sort(g);
+    topological_sort(g, 0);
     delete_graph(g);
 }
 

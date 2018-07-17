@@ -271,8 +271,45 @@ int is_cyclic(struct Graph * g)
     return FALSE;
 }
 
-void topological_sort(struct Graph * g)
+int topological_sort_util(struct Graph * g, int v, int * discovered, int * processed, struct Queue * order)
 {
-    ;
+    struct AdjList * curr = g->array+v;
+    struct AdjListNode * crawl = curr->head;
+    discovered[v] = TRUE;
+    while (crawl != NULL) {
+        if (!discovered[crawl->data]) {
+            int finished = topological_sort_util(g, crawl->data, discovered, processed, order);
+            if (finished) return TRUE;
+        } else if (processed[crawl->data] == FALSE) {
+            return TRUE;
+        }
+        crawl = crawl->next;
+    }
+    push(order, curr);
+    processed[v] = TRUE;
+    return FALSE;
+}
+
+void topological_sort(struct Graph * g, int v)
+{
+    int discovered[g->nVertices];
+    int processed[g->nVertices];
+    struct Queue * order = new_queue(NULL);
+    pop(order);
+    for (int i=0; i<g->nVertices; i++) {
+        for (int j=0; j<g->nVertices; j++) {
+            discovered[j] = FALSE;
+            processed[j] = FALSE;
+        }
+        int finished = topological_sort_util(g, i, discovered, processed, order);
+        if (finished) {
+            printf("Not a DAG\n");
+        } else {
+            while (order->head != NULL)
+                printf("%d ", (int) (pop(order) - g->array));
+            printf("\n");
+        }
+    }
+    delete_queue(order);
 }
 
