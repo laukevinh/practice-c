@@ -187,19 +187,23 @@ int bfs(struct Graph *g, int v1, int v2)
 
 /*  determine if graph has a cycle
 
-    Use depth first search to determine if graph is
-    cyclic starting from a given vertex v. Vertex v is initally 
-    marked discovered and processed. If v has neighbors,
-    process them. Else, if no neighbors, mark v as unprocessed.
-    If v has a neighbor that has been discovered and marked
-    processed, then it is an ancestor.
+    Assumes graph has a cycle until proven false. First method
+    uses DFS to determine if graph is cyclic starting from a 
+    given vertex v. Vertex v is initally marked discovered and 
+    processed. Each neighbor is processed recursively. If a
+    neighbor has been discovered but is still marked processed,
+    then there is a back edge and therefore a cycle. The key
+    is to unmark a vertex when it has 0 neighbors and return
+    up the stack.
 
     Acyclic graph example
 
-    Start at 0, discover and process 1, hit NULL, so mark 1
-    unprocessed. Then discover and process 2, seeing vertex 1
-    again. Check if vertex 1 was marked processed. If not,
-    then it leads to NULL and mark 2 unprocessed.
+    Start at 0, mark it discovered and processed. Discover and
+    process 1, hit NULL, so mark 1 unprocessed. Then discover 
+    and process 2, seeing vertex 1 again. Check if vertex 1 
+    was marked processed. It was unmarked, so no cycles in
+    that branch and unmark 2 as well. 0 gets the signal and
+    unmarks itself.
     
          +---+
       +--| 0 |--+
@@ -211,11 +215,11 @@ int bfs(struct Graph *g, int v1, int v2)
 
     Cyclic graph example
 
-    Start at 0, discover and process 1. Then discover and 
-    process 2. Seeing vertex 0 again, check if it was marked 
-    processed. Vertex 0 is still marked processed. None of
-    its neighbors have finished the recursion. Thus return
-    TRUE up the call stack.
+    Start at 0, mark it discovered and processed. Discover and
+    process 1. Then discover and process 2. Seeing vertex 0 
+    again, check if it was marked processed. Vertex 0 is still 
+    marked processed. None of 0's neighbors have finished the 
+    recursion. Return TRUE up the call stack.
 
          +---+
       +--| 0 |<-+
@@ -224,19 +228,22 @@ int bfs(struct Graph *g, int v1, int v2)
     +---+     +---+
     | 1 |---->| 2 |
     +---+     +---+
+
+    Running time is Theta(|V| + |E|) for undirected graphs.
+    Directed graphs would count each edge twice, |V| + |2E|,
+    though that reduces to the same Theta.
 */
 
-int is_cyclic(struct Graph * g, int v, int * discovered, int * processed)
+int is_cyclic_util(struct Graph * g, int v, int * discovered, int * processed)
 {
     struct AdjList * curr = g->array+v;
     struct AdjListNode * crawl = curr->head;
+    discovered[v] = TRUE;
+    processed[v] = TRUE;
     while (crawl != NULL) {
         if (!discovered[crawl->data]) {
-            discovered[crawl->data] = TRUE;
-            processed[crawl->data] = TRUE;
-            int finished = is_cyclic(g, crawl->data, discovered, processed);
-            if (finished)
-                return TRUE;
+            int finished = is_cyclic_util(g, crawl->data, discovered, processed);
+            if (finished) return TRUE;
         } else if (processed[crawl->data] == TRUE) {
             return TRUE;
         }
@@ -245,3 +252,28 @@ int is_cyclic(struct Graph * g, int v, int * discovered, int * processed)
     processed[v] = FALSE;
     return FALSE;
 }
+
+/*  Since the graph may not be connected, need to test every
+    vertex. Total running time is therefore Theta(v*(v + e)).
+*/
+
+int is_cyclic(struct Graph * g)
+{
+    int discovered[g->nVertices];
+    int processed[g->nVertices];
+    for (int i=0; i<g->nVertices; i++) {
+        discovered[i] = 0;
+        processed[i] = 0;
+    }
+    for (int i=0; i<g->nVertices; i++) {
+        int finished = is_cyclic_util(g, i, discovered, processed);
+        if (finished) return TRUE;
+    }
+    return FALSE;
+}
+
+void topological_sort(struct Graph * g)
+{
+    ;
+}
+
