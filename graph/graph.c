@@ -133,20 +133,20 @@ int connected(struct Graph * g, int v1, int v2)
     one of the shortest paths between two vertices is 
     the list of parents from vertex 2 to vertex 1. 
 
-    Vertex 1's parent is NULL (in this case it's -1).
-    So recursively print parents from vertex 2 until NULL.
+    Vertex 1's parent is NULL, so recursively print 
+    parents from vertex 2 until NULL.
 */
 
 /* prints shortest path using parents */
 
-void print_path(int * parent, int node)
+void print_path(struct AdjList ** parent, struct AdjList * node, struct AdjList * root)
 {
-    if (parent[node] >= 0) {
-        print_path(parent, parent[node]);
-        printf("%d ", node);
-    } else {
-        printf("root ");
+    int index = (int) (node - root);
+    while (parent[index] != NULL) {
+        printf("%d ", index); 
+        index = (int) (parent[index] - root);
     }
+    printf("%d\n", index);
 }
 
 int bfs(struct Graph *g, int v1, int v2)
@@ -154,10 +154,10 @@ int bfs(struct Graph *g, int v1, int v2)
     struct Queue * q = new_queue(g->array+v1);
 
     int discovered[g->nVertices];
-    int parent[g->nVertices];
+    struct AdjList * parent[g->nVertices];
     for (int i=0; i<g->nVertices; i++) {
         discovered[i] = FALSE;
-        parent[i] = -1;
+        parent[i] = NULL;
     }
     discovered[v1] = TRUE;
 
@@ -165,16 +165,17 @@ int bfs(struct Graph *g, int v1, int v2)
         struct AdjList * curr = dequeue(q);
         struct AdjListNode * crawl = curr->head;
         while (crawl != NULL) {
-            if (crawl->data == v2) {
-                discovered[crawl->data] = TRUE;
-                parent[crawl->data] = curr - g->array;
-                print_path(parent, v2);
+            int i = crawl->data;
+            if (i == v2) {
+                discovered[i] = TRUE;
+                parent[i] = curr;
+                print_path(parent, g->array + i, g->array);
                 return TRUE;
             }
-            if (!discovered[crawl->data]) {
-                enqueue(q, g->array+crawl->data);
-                discovered[crawl->data] = TRUE;
-                parent[crawl->data] = curr - g->array;
+            if (!discovered[i]) {
+                enqueue(q, g->array+i);
+                discovered[i] = TRUE;
+                parent[i] = curr;
             }
             crawl = crawl->next;
         }
@@ -271,6 +272,20 @@ int is_cyclic(struct Graph * g)
     return FALSE;
 }
 
+/*  topological sort
+
+    Perform DFS starting from vertex v. As each edge is
+    processed, push onto a stack. If no back edges, print
+    stack LIFO since the deepest item was added to the
+    stack first.
+
+    Running time for topological_sort_util is Theta(|V|+|E|)
+    then add Theta(|V|) for printing the topological sort.
+
+    Perform topological sort on all nodes means running time
+    Theta(v*(v+e)).
+*/
+
 int topological_sort_util(struct Graph * g, int v, int * discovered, int * processed, struct Queue * order)
 {
     struct AdjList * curr = g->array+v;
@@ -294,8 +309,8 @@ void topological_sort(struct Graph * g, int v)
 {
     int discovered[g->nVertices];
     int processed[g->nVertices];
-    struct Queue * order = new_queue(NULL);
-    pop(order);
+    struct Queue ord = { NULL, NULL };
+    struct Queue * order = &ord;
     for (int i=0; i<g->nVertices; i++) {
         for (int j=0; j<g->nVertices; j++) {
             discovered[j] = FALSE;
@@ -310,6 +325,5 @@ void topological_sort(struct Graph * g, int v)
             printf("\n");
         }
     }
-    delete_queue(order);
 }
 

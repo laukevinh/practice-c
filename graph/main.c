@@ -69,11 +69,15 @@ void test_shortest_path(void)
     add_edge(g, 5, 6);
     add_edge(g, 6, 3);
     add_edge(g, 6, 5);
+    add_edge(g, 6, 8);
     add_edge(g, 7, 3);
     add_edge(g, 7, 8);
+    add_edge(g, 8, 6);
     add_edge(g, 8, 7);
     bfs(g, 5, 0);
-    printf("\n");
+    bfs(g, 9, 0);
+    bfs(g, 2, 5);
+    bfs(g, 5, 8);
     delete_graph(g);
 }
 
