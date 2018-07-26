@@ -14,10 +14,11 @@
 
 */
 
-struct Graph * new_graph(int nVertices)
+struct Graph * new_graph(int nVertices, int directed)
 {
     struct Graph * g = malloc(sizeof(struct Graph));
     g->nVertices = nVertices;
+    g->directed = directed;
 
     int size = nVertices * nVertices;
     g->array = malloc(sizeof(int) * size);
@@ -177,7 +178,7 @@ int shortest_path(struct Graph * g, int v1, int v2)
     though that reduces to the same Theta.
 */
 
-int is_cyclic_util(struct Graph * g, int v, int * discovered, int * processed)
+int is_cyclic_util(struct Graph * g, int v, int * discovered, int * processed, int * parent)
 {
     discovered[v] = TRUE;
     processed[v] = FALSE;
@@ -185,11 +186,17 @@ int is_cyclic_util(struct Graph * g, int v, int * discovered, int * processed)
         int child_exists = g->array[v * g->nVertices + j];
         if (child_exists) {
             if (!discovered[j]) {
-                int finished = is_cyclic_util(g, j, discovered, processed);
+                parent[j] = v;
+                int finished = is_cyclic_util(g, j, discovered, processed, parent);
                 if (finished) return TRUE;
             } else if (!processed[j]) {
-                printf("Cycle at %d, %d\n", v, j);
-                return TRUE;
+                if (g->directed) {
+                    printf("Cycle at %d, %d\n", v, j);
+                    return TRUE;
+                } else if (parent[v] != j) {
+                    printf("Cycle at %d, %d\n", v, j);
+                    return TRUE;
+                }
             }
         }
     }
@@ -205,11 +212,13 @@ int is_cyclic(struct Graph * g)
 {
     int discovered[g->nVertices];
     int processed[g->nVertices];
+    int parent[g->nVertices];
     for (int i=0; i<g->nVertices; i++) {
         discovered[i] = processed[i] = FALSE;
+        parent[i] = -1;
     }
     for (int i=0; i<g->nVertices; i++) {
-        int finished = is_cyclic_util(g, i, discovered, processed);
+        int finished = is_cyclic_util(g, i, discovered, processed, parent);
         if (finished) return TRUE;
     }
     return FALSE;

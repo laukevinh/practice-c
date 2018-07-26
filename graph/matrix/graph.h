@@ -1,9 +1,10 @@
 struct Graph {
     int nVertices;
+    int directed;
     int * array;
 };
 
-struct Graph * new_graph(int nVertices);
+struct Graph * new_graph(int nVertices, int directed);
 void add_edge(struct Graph * g, int v1, int v2);
 void delete_graph(struct Graph * g);
 void print_graph(struct Graph * g);

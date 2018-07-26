@@ -29,7 +29,7 @@ int main(void)
 void test_adjacency_list(void)
 {
     printf("Test adjacency list\n");
-    struct Graph * g = new_graph(5);
+    struct Graph * g = new_graph(5, 0);
     add_edge(g, 0, 1);
     add_edge(g, 0, 4);
     add_edge(g, 1, 0);
@@ -51,7 +51,7 @@ void test_adjacency_list(void)
 void test_shortest_path(void)
 {
     printf("Test shortest path using bfs\n");
-    struct Graph * g = new_graph(10);
+    struct Graph * g = new_graph(10, 0);
     add_edge(g, 0, 1);
     add_edge(g, 1, 0);
     add_edge(g, 1, 2);
@@ -84,7 +84,7 @@ void test_shortest_path(void)
 void test_is_cyclic(void)
 {
     printf("Test for cycles\n");
-    struct Graph * g = new_graph(5);
+    struct Graph * g = new_graph(5, 1);
     add_edge(g, 0, 1);
     add_edge(g, 0, 4);
     add_edge(g, 1, 3);
@@ -95,14 +95,14 @@ void test_is_cyclic(void)
     assert(is_cyclic(g) == 1);
     delete_graph(g);
 
-    g = new_graph(3);
+    g = new_graph(3, 1);
     add_edge(g, 0, 1);
     add_edge(g, 1, 2);
     add_edge(g, 2, 0);
     assert(is_cyclic(g) == 1);
     delete_graph(g);
 
-    g = new_graph(5);
+    g = new_graph(5, 1);
     add_edge(g, 0, 1);
     add_edge(g, 0, 4);
     add_edge(g, 1, 3);
@@ -112,9 +112,31 @@ void test_is_cyclic(void)
     assert(is_cyclic(g) == 0);
     delete_graph(g);
 
-    g = new_graph(5);
+    g = new_graph(5, 1);
     add_edge(g, 0, 1);
     add_edge(g, 0, 2);
+    add_edge(g, 3, 4);
+    add_edge(g, 4, 3);
+    assert(is_cyclic(g) == 1);
+    delete_graph(g);
+    
+    g = new_graph(5, 0);
+    add_edge(g, 0, 1);
+    add_edge(g, 0, 2);
+    add_edge(g, 1, 0);
+    add_edge(g, 2, 0);
+    add_edge(g, 3, 4);
+    add_edge(g, 4, 3);
+    assert(is_cyclic(g) == 0);
+    delete_graph(g);
+
+    g = new_graph(5, 0);
+    add_edge(g, 0, 1);
+    add_edge(g, 0, 2);
+    add_edge(g, 1, 0);
+    add_edge(g, 1, 2);
+    add_edge(g, 2, 0);
+    add_edge(g, 2, 1);
     add_edge(g, 3, 4);
     add_edge(g, 4, 3);
     assert(is_cyclic(g) == 1);
@@ -124,7 +146,7 @@ void test_is_cyclic(void)
 void test_topological_sort(void)
 {
     printf("Test topological sort\n");
-    struct Graph * g = new_graph(5);
+    struct Graph * g = new_graph(5, 1);
     add_edge(g, 0, 1);
     add_edge(g, 0, 4);
     add_edge(g, 1, 3);
@@ -139,7 +161,7 @@ void test_topological_sort(void)
 void test_stack(void)
 {
     printf("Test stack\n");
-    struct Graph * g = new_graph(5);
+    struct Graph * g = new_graph(5, 0);
     struct Queue * stack = new_queue(NULL);
     for (int i=0; i<g->nVertices; i++) {
         push(stack, g->array+i);

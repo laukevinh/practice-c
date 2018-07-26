@@ -33,10 +33,11 @@
         (g->array+i)->head = NULL;
 */
 
-struct Graph * new_graph(int nVertices)
+struct Graph * new_graph(int nVertices, int directed)
 {
     struct Graph * g = malloc(sizeof(struct Graph));
     g->nVertices = nVertices;
+    g->directed = directed;
 
     g->array = malloc(sizeof(struct AdjList) * nVertices);
 
@@ -234,7 +235,7 @@ int bfs(struct Graph *g, int v1, int v2)
     though that reduces to the same Theta.
 */
 
-int is_cyclic_util(struct Graph * g, int v, int * discovered, int * processed)
+int is_cyclic_util(struct Graph * g, int v, int * discovered, int * processed, struct AdjList ** parent)
 {
     struct AdjList * curr = g->array+v;
     struct AdjListNode * crawl = curr->head;
@@ -242,10 +243,15 @@ int is_cyclic_util(struct Graph * g, int v, int * discovered, int * processed)
     processed[v] = FALSE;
     while (crawl != NULL) {
         if (!discovered[crawl->data]) {
-            int finished = is_cyclic_util(g, crawl->data, discovered, processed);
+            parent[crawl->data] = curr;
+            int finished = is_cyclic_util(g, crawl->data, discovered, processed, parent);
             if (finished) return TRUE;
         } else if (processed[crawl->data] == FALSE) {
-            return TRUE;
+            if (g->directed) {
+                return TRUE;
+            } else if (parent[v] != g->array+crawl->data) {
+                return TRUE;
+            }
         }
         crawl = crawl->next;
     }
@@ -261,12 +267,14 @@ int is_cyclic(struct Graph * g)
 {
     int discovered[g->nVertices];
     int processed[g->nVertices];
+    struct AdjList * parent[g->nVertices];
     for (int i=0; i<g->nVertices; i++) {
         discovered[i] = FALSE;
         processed[i] = FALSE;
+        parent[i] = NULL;
     }
     for (int i=0; i<g->nVertices; i++) {
-        int finished = is_cyclic_util(g, i, discovered, processed);
+        int finished = is_cyclic_util(g, i, discovered, processed, parent);
         if (finished) return TRUE;
     }
     return FALSE;
