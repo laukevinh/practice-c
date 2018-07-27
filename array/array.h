@@ -1,20 +1,26 @@
+#define MIN_CAPACITY 16
+#define RESIZE_FACTOR 2
+#define DOWNSIZE_THRESHOLD 4
 
 /* int array struct */
 struct IntArray {
-    int* data;
     int len;
+    int capacity;
+    int* data;
 };
 
 /* functions */
-struct IntArray* new_array(int len);
+struct IntArray* new_array(void);
 void delete_array(struct IntArray* intArray);
-void resize(struct IntArray* intArray, int new_len);
+void resize(struct IntArray* intArray, int new_capacity);
 void append(struct IntArray* intArray, int i);
-void pop(struct IntArray* intArray);
+int pop(struct IntArray* intArray);
 void insert(struct IntArray* intArray, int i, int pos);
 void push(struct IntArray* intArray, int i);
-void delete(struct IntArray* intArray, int pos);
-void pop_front(struct IntArray* intArray);
+int del(struct IntArray* intArray, int pos);
+int pop_front(struct IntArray* intArray);
+void update(struct IntArray* intArray, int i, int pos);
+int find(struct IntArray* intArray, int x);
 int front(struct IntArray* intArray);
 int last(struct IntArray* intArray);
 
