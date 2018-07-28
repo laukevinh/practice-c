@@ -13,13 +13,6 @@ struct Node* new_node(int i)
     return node;
 }
 
-void delete_node(struct Node* node)
-{
-    /* this will free node data, but children
-       are still in the heap */
-    free(node);
-}
-
 void insert(struct Node* node, int i)
 {
     if (i < node->data) {
@@ -39,24 +32,23 @@ void insert(struct Node* node, int i)
 
 void delete_tree(struct Node* node)
 {
-    if (node->left != NULL)
+    if (node != NULL) {
         delete_tree(node->left);
-    if (node->right != NULL)
         delete_tree(node->right);
-    free(node);
+        free(node);
+    }
 }
 
 int is_in_tree(struct Node* node, int i)
 {
-    if (i == node->data) {
-        return TRUE;
-    } else if (i < node->data && node->left != NULL) {
-        is_in_tree(node->left, i);
-    } else if (i > node->data && node->right != NULL) {
-        is_in_tree(node->right, i);
-    } else {
+    if (node == NULL)
         return FALSE;
-    }
+    else if (i < node->data)
+        return is_in_tree(node->left, i);
+    else if (i > node->data)
+        return is_in_tree(node->right, i);
+    else
+        return TRUE;
 }
 
 int count(struct Node* node)
@@ -66,18 +58,20 @@ int count(struct Node* node)
     return 1 + count(node->left) + count(node->right);
 }
 
+// height is 1 + max of children heights
 int height(struct Node* node)
 {
-    // height is 1 + max of children heights
     if (node == NULL)
         return -1;
-    int hleft = height(node->left);
-    int hright = height(node->right);
-    return 1 + (hleft > hright ? hleft : hright);
+    int left = height(node->left);
+    int right = height(node->right);
+    return 1 + (left > right ? left : right);
 }
 
 int min(struct Node* node)
 {
+    if (node == NULL)
+        exit(EXIT_FAILURE);
     while (node->left != NULL)
         node = node->left;
     return node->data;
@@ -85,103 +79,70 @@ int min(struct Node* node)
 
 int max(struct Node* node)
 {
+    if (node == NULL)
+        exit(EXIT_FAILURE);
     while (node->right != NULL)
         node = node->right;
     return node->data;
 }
 
-struct sNode* new_stack_node(struct Node* node)
+struct Node * successor(struct Node* node, int i)
 {
-    struct sNode* snode = malloc(sizeof(struct sNode));
-    snode->node = node;
-    snode->next = NULL;
-    return snode;
-}
-
-struct Stack* new_stack(struct Node* node)
-{
-    struct Stack* stack = malloc(sizeof(struct Stack));
-    stack->head = new_stack_node(node);
-    return stack;
-}
-
-void append_stack(struct Stack* stack, struct Node* node)
-{
-    struct sNode* new_snode = new_stack_node(node);
-    new_snode->next = stack->head;
-    stack->head = new_snode;
-}
-
-struct Node* pop_stack(struct Stack* stack)
-{
-    if (stack->head == NULL)
-        return NULL;
-    struct sNode* snode = stack->head;
-    stack->head = snode->next;
-    struct Node* node = snode->node;
-    free(snode);
-    return node;
-}
-
-void delete_stack(struct Stack* stack)
-{
-    while (stack->head != NULL)
-        pop_stack(stack);
-}
-
-void print_stack(struct Stack* stack)
-{
-    struct sNode* snode = stack->head;
-    for ( ; snode != NULL; snode = snode->next)
-        printf("%d ", snode->node->data);
-}
-
-int successor(struct Node* node, int i)
-{
-    /* Use stack for in order traversal of tree.
-       Once key is found, return the next largest.
-       Return -1 if key not found. */ 
-    struct Node* suc;
-    struct Node* curr;
-    struct Stack* stack;
+    /*  Use stack for in order traversal of tree.
+        Once key is found, return the next largest.
+        Return NULL if key not found or no successor. 
+    */ 
+    struct Node* succ = NULL;
+    struct Stack* stack = new_stack(NULL);
     int found = FALSE;
 
-    suc = new_node(-1); 
-    
-    // init stack with left most nodes
-    for (stack=new_stack(node); node->left!=NULL; node=node->left)
-        append_stack(stack, node->left);
 
-    // pop stack to get min node
-    curr = pop_stack(stack);
-
-    /* If this node has key, successor might be right child,
-       children of right child, or parent of this node. This
-       node is min and does not have a left child. */
-    while (!found && curr != NULL) {
-        if (curr->data == i)
+    //  init stack with left most nodes
+    while (!found && node != NULL) {
+        if (node->data == i) {
             found = TRUE;
-        curr = curr->right;
-        if (curr != NULL) {
-            while (curr->left != NULL) {
-                append_stack(stack, curr);
-                curr = curr->left;
-            }
-            if (found) {
-                suc = curr;
-            } else if (curr->data == i) {
-                found = TRUE;
-                suc = pop_stack(stack);
-            }
+        } else {
+            append_stack(stack, node);
+            node = node->left;
         }
-        if (found && suc->data < 0)
-            suc = pop_stack(stack);
-        curr = pop_stack(stack);
     }
 
-    // clean up and return value
+    /*  node is currently NULL, so get next from stack,
+        which is a min. Look at right child, children of  
+        right child, and finally parent of this node (which
+        is also from the stack) until key is found.
+    */
+    while (!found && stack->head != NULL) {
+        node = pop_stack(stack);
+        if (node != NULL) {
+            node = node->right;
+            if (node != NULL && node->data == i) {
+                found = TRUE;
+            } else while (!found && node != NULL) {
+                if (node->data == i) {
+                    found = TRUE;
+                } else {
+                    append_stack(stack, node);
+                    node = node->left;
+                }
+            }
+        }
+    }
+
+    /*  Once found, successor might be right child, left
+        most child of right child, or parent of this node. */
+    if (found) {
+        succ = node->right;
+        if (succ == NULL) {
+            succ = pop_stack(stack);
+        } else while (succ->left != NULL) {
+            succ = succ->left;
+        }
+    }
+
+    //  clean up and return value
     delete_stack(stack);
-    return suc->data;
+    return succ;
 }
 
 void print_in_order(struct Node* node)
@@ -193,94 +154,3 @@ void print_in_order(struct Node* node)
         print_in_order(node->right);
 }
 
-void test_new_node(void)
-{
-    struct Node* root = new_node(0);
-    printf("New Node: (%p) %d\n\n", root, root->data);
-    delete_node(root);
-}
-
-void test_insert(void)
-{
-    struct Node* root = new_node(10);
-    printf("Test insert\n");
-    insert(root, 5);
-    insert(root, 15);
-    printf("%d %d %d\n\n", root->left->data, root->data, root->right->data);
-    delete_node(root->left);
-    delete_node(root->right);
-    delete_node(root);
-}
-
-void test_is_in_tree(void)
-{
-    struct Node* root = new_node(10);
-    printf("Test is in tree\n");
-    for (int i=0; i<20; i+=4)
-        insert(root, i);
-    print_in_order(root);
-    printf("\n");
-    for (int i=0; i<30; i+=10)
-        printf("%d %sin tree\n", i, is_in_tree(root, i) ? "" : "not ");
-    printf("\n");
-    delete_tree(root);
-}
-
-void test_count(void)
-{
-    struct Node* root = new_node(10);
-    printf("Test count\n");
-    for (int i=0; i<20; i+=4)
-        insert(root, i);
-    print_in_order(root);
-    printf("Count: %d\n\n", count(root));
-    delete_tree(root);
-}
-
-void test_height(void)
-{
-    struct Node* root = new_node(10);
-    printf("Test height\n");
-    for (int i=0; i<20; i+=4)
-        insert(root, i);
-    print_in_order(root);
-    printf("Height: %d\n\n", height(root));
-    delete_tree(root);
-}
-
-void test_min(void)
-{
-    struct Node* root = new_node(10);
-    printf("Test min\n");
-    for (int i=-4; i<20; i+=4)
-        insert(root, i);
-    print_in_order(root);
-    printf("Min: %d\n\n", min(root));
-    delete_tree(root);
-}
-
-void test_max(void)
-{
-    struct Node* root = new_node(10);
-    printf("Test max\n");
-    for (int i=4; i<20; i+=4)
-        insert(root, i);
-    print_in_order(root);
-    printf("Max: %d\n\n", max(root));
-    delete_tree(root);
-}
-
-void test_successor(void)
-{
-    struct Node* root = new_node(8);
-    printf("Test successor\n");
-    int a[5] = { 6, 16, 5, 7, 10 };
-    for (int i=0; i<5; i++)
-        insert(root, a[i]);
-    print_in_order(root);
-    printf("\nSuccessor: ");
-    for (int i=5; i<11; i++)
-        printf("(%d,%d) ", i, successor(root, i));
-    printf("\n");
-    delete_tree(root);
-}
