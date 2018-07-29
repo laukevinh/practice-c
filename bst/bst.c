@@ -145,6 +145,39 @@ struct Node * successor(struct Node* node, int i)
     return succ;
 }
 
+struct Node* get_next_min(struct Node* root)
+{
+    while (root->left != NULL)
+        root = root->left;
+    return root;
+}
+
+struct Node* delete_node(struct Node* root, int key)
+{
+    if (root == NULL)
+        return NULL;
+    if (key < root->data) {
+        root->left = delete_node(root->left, key);
+    } else if (key > root->data) {
+        root->right = delete_node(root->right, key);
+    } else {
+        if (root->left == NULL) {
+            struct Node* temp = root->right;
+            free(root);
+            return temp;
+        }
+        if (root->right == NULL) {
+            struct Node* temp = root->left;
+            free(root);
+            return temp;
+        }
+        struct Node* succ = get_next_min(root->right);
+        root->data = succ->data;
+        root->right = delete_node(root->right, succ->data);
+    }
+    return root;
+}
+
 void print_in_order(struct Node* node)
 {
     if (node->left != NULL)

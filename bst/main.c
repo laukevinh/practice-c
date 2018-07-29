@@ -12,6 +12,7 @@ int main(void)
     test_height();
     test_min_max();
     test_successor();
+    test_delete_node();
     return 0;
 }
 
@@ -116,3 +117,74 @@ void test_successor(void)
 
     assert(successor(NULL, 0) == NULL);
 }
+
+void test_delete_node(void)
+{
+    printf("Test delete node\n");
+    /*      0            0             0
+             \            \             \
+              1[X]         2             2
+               \     to     \     to      \
+                2            3[X]          4
+                 \            \
+                  3            4
+                   \
+                    4
+    */
+    struct Node* root = new_node(0);
+    for (int i=1; i<5; i++)
+        insert(root, i);
+    root = delete_node(root, 1);
+    assert(root->right->data == 2);
+    root = delete_node(root, 3);
+    assert(root->right->right->data == 4);
+    delete_tree(root);
+
+    root = new_node(5);
+    for (int i=4; i>0; i--)
+        insert(root, i);
+    root = delete_node(root, 3);
+    assert(root->left->left->data == 2);
+    delete_tree(root);
+
+    /*      10             10          10
+           /              /           /
+          5[X]           7           7
+         / \     to     / \     to    \
+        3   7       [X]3   8           8
+             \
+              8
+    */
+
+    root = new_node(10);
+    int b[] = { 5, 3, 7, 8 };
+    for (int i=0; i<4; i++)
+        insert(root, b[i]);
+    root = delete_node(root, 5);
+    assert(root->left->data == 7);
+    root = delete_node(root, 3);
+    assert(root->left->left == NULL);
+    delete_tree(root);
+
+    /*      3              3             3[X]           10
+             \              \             \             /
+              8[X]           9[X]          10          7 
+             / \     to     / \     to    /      to   / 
+            7   10         7   10        7           6 
+           /   /          /             /
+          6   9          6             6
+    */
+    root = new_node(3);
+    int c[] = { 8, 10, 7, 6, 9 };
+    for (int i=0; i<5; i++)
+        insert(root, c[i]);
+    root = delete_node(root, 8);
+    assert(root->right->data == 9);
+    root = delete_node(root, 9);
+    assert(root->right->data == 10);
+    root = delete_node(root, 3);
+    assert(root->data == 10);
+    delete_tree(root);
+
+}
+

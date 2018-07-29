@@ -22,6 +22,7 @@ int height(struct Node* node);
 int min(struct Node* node);
 int max(struct Node* node);
 struct Node* successor(struct Node* node, int i);
+struct Node* delete_node(struct Node* node, int i);
 void print_in_order(struct Node* node);
 
 struct sNode* new_stack_node(struct Node* node);
@@ -40,8 +41,8 @@ void test_count(void);
 void test_height(void);
 void test_min_max(void);
 void test_successor(void);
+void test_delete_node(void);
 /*
-void test_delete(void);
 void test_update(void);
 void test_find(void);
 */
