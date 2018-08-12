@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include "graph.h"
 #include "queue.h"
-#include "heap.h"
 #define TRUE 1
 #define FALSE 0
 #define NOCOLOR 0

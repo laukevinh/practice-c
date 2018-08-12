@@ -273,7 +273,7 @@ void test_weighted_graph(void)
     add_wt_edge(g, 2, 0, 2);
 
     assert(g->array[0].head->weight == 2);
-    assert(g->array[1].head->weight == 1);
+    assert(g->array[1].head->weight == 4);
     delete_graph(g);
 }
 
