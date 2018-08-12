@@ -2,8 +2,12 @@
 #include <stdio.h>
 #include "graph.h"
 #include "queue.h"
+#include "heap.h"
 #define TRUE 1
 #define FALSE 0
+#define NOCOLOR 0
+#define WHITE 1
+#define BLACK 2
 
 /*  Adjacency List representation
 
@@ -57,11 +61,31 @@ struct AdjListNode * new_node(int data)
     return node;
 }
 
+/* New adjacency list node weighted */
+
+struct AdjListNode * new_wt_node(int data, int weight)
+{
+    struct AdjListNode * node = malloc(sizeof(struct AdjListNode));
+    node->data = data;
+    node->weight = weight;
+    node->next = NULL;
+    return node;
+}
+
 /*  add an edge between vertex v1 and vertex v2 */
 
 void add_edge(struct Graph * g, int v1, int v2)
 {
     struct AdjListNode * node = new_node(v2);
+    node->next = g->array[v1].head;
+    g->array[v1].head = node;
+}
+
+/*  add a weighted edge between vertex v1 and vertex v2 */
+
+void add_wt_edge(struct Graph * g, int v1, int v2, int wt)
+{
+    struct AdjListNode * node = new_wt_node(v2, wt);
     node->next = g->array[v1].head;
     g->array[v1].head = node;
 }
@@ -150,7 +174,7 @@ void print_path(struct AdjList ** parent, struct AdjList * node, struct AdjList 
     printf("%d\n", index);
 }
 
-int bfs(struct Graph *g, int v1, int v2)
+int shortest_path(struct Graph *g, int v1, int v2)
 {
     struct Queue * q = new_queue(g->array+v1);
 
@@ -335,3 +359,102 @@ void topological_sort(struct Graph * g, int v)
     }
 }
 
+int bfs_util(struct Graph *g, int start, int region, int * discovered, struct AdjList ** parent)
+{
+    struct Queue * q = new_queue(g->array+start);
+    int num_discovered = 0;
+
+    while (q->head != NULL) {
+        struct AdjList * curr = dequeue(q);
+        struct AdjListNode * crawl = curr->head;
+        while (crawl != NULL) {
+            int i = crawl->data;
+            if (!discovered[i]) {
+                enqueue(q, g->array+i);
+                discovered[i] = region;
+                num_discovered++;
+                parent[i] = curr;
+            }
+            crawl = crawl->next;
+        }
+    }
+    delete_queue(q);
+    return num_discovered;
+}
+
+int connected_components(struct Graph * g)
+{
+    // init BFS
+
+    int discovered[g->nVertices];
+    struct AdjList * parent[g->nVertices];
+    for (int i=0; i<g->nVertices; i++) {
+        discovered[i] = FALSE;
+        parent[i] = NULL;
+    }
+
+    int region = 1;
+    int v = 0;
+    discovered[v] = region;
+    for (int i=0; i<g->nVertices; i++) {
+        int num_discovered = bfs_util(g, i, region, discovered, parent);
+        if (num_discovered > 0) {
+            region++;
+        }
+    }
+    return region - 1;
+}
+
+int complement_color(int color)
+{
+    if (color == BLACK) return WHITE;
+    if (color == WHITE) return BLACK;
+    return NOCOLOR;
+}
+
+int bfs_color(struct Graph *g, int start, int * color, int * discovered, struct AdjList ** parent)
+{
+    struct Queue * q = new_queue(g->array+start);
+
+    while (q->head != NULL) {
+        struct AdjList * curr = dequeue(q);
+        struct AdjListNode * crawl = curr->head;
+        while (crawl != NULL) {
+            int i = crawl->data;
+            int p = (int) (curr - g->array);
+            if (!discovered[i]) {
+                enqueue(q, g->array+i);
+                discovered[i] = TRUE;
+                if (color[i] == NOCOLOR) {
+                    color[i] = complement_color(color[p]);
+                }                 parent[i] = curr;
+            } else if (color[i] == color[p]) {
+                printf("Not a bipartite graph %d,%d\n", p, i);
+                return FALSE;
+            }
+            crawl = crawl->next;
+        }
+    }
+    delete_queue(q);
+    return TRUE;
+}
+
+int two_color(struct Graph * g)
+{
+    int discovered[g->nVertices];
+    int color[g->nVertices];
+    struct AdjList * parent[g->nVertices];
+    for (int i=0; i<g->nVertices; i++) {
+        discovered[i] = FALSE;
+        color[i] = NOCOLOR;
+        parent[i] = NULL;
+    }
+
+    int v = 0;
+    discovered[v] = TRUE;
+    color[v] = WHITE;
+    for (int i=0; i<g->nVertices; i++) {
+        bfs_color(g, i, color, discovered, parent);
+    }
+    return TRUE;
+}

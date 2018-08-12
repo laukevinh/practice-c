@@ -9,11 +9,14 @@ int main(void)
     test_shortest_path();
     test_is_cyclic();
     test_topological_sort();
+    test_connected_components();
+    test_two_color();
+    test_weighted_graph();
     //test_stack();
     return 0;
 }
 
-/*  Test following graph
+/*  Test following undirected graph
 
     +---+     +---+
     | 0 |-----| 1 |-----+
@@ -48,6 +51,26 @@ void test_adjacency_list(void)
     delete_graph(g);
 }
 
+/*  Test following undirected graph
+
+    +---+   +---+   +---+
+    | 0 |---| 1 |---| 2 |
+    +---+   +---+   +---+
+              |    / 
+              |   / 
+              |  /
+    +---+   +---+   +---+
+    | 4 |---| 3 |---| 7 |
+    +---+   +---+   +---+
+      |       |       |
+      |       |       |
+      |       |       |
+    +---+   +---+   +---+
+    | 5 |---| 6 |---| 8 |
+    +---+   +---+   +---+
+
+*/
+
 void test_shortest_path(void)
 {
     printf("Test shortest path using bfs\n");
@@ -74,10 +97,10 @@ void test_shortest_path(void)
     add_edge(g, 7, 8);
     add_edge(g, 8, 6);
     add_edge(g, 8, 7);
-    bfs(g, 5, 0);
-    bfs(g, 9, 0);
-    bfs(g, 2, 5);
-    bfs(g, 5, 8);
+    shortest_path(g, 5, 0);
+    shortest_path(g, 9, 0);
+    shortest_path(g, 2, 5);
+    shortest_path(g, 5, 8);
     delete_graph(g);
 }
 
@@ -157,6 +180,148 @@ void test_topological_sort(void)
     delete_graph(g);
 }
 
+/*  test the following undirected graph
+
+    +---+   +---+   +---+
+    | 0 |---| 1 |---| 2 |
+    +---+   +---+   +---+
+
+    +---+   +---+   +---+
+    | 5 |---| 4 |---| 3 |
+    +---+   +---+   +---+
+
+    +---+   +---+   +---+
+    | 6 |---| 8 |---| 7 |
+    +---+   +---+   +---+
+*/
+
+    
+void test_connected_components(void)
+{
+    printf("Test connected components\n");
+    struct Graph * g = new_graph(9, 1);
+    add_edge(g, 0, 1);
+    add_edge(g, 1, 0);
+    add_edge(g, 1, 2);
+    add_edge(g, 2, 1);
+
+    add_edge(g, 3, 4);
+    add_edge(g, 4, 3);
+    add_edge(g, 4, 5);
+    add_edge(g, 5, 4);
+
+    add_edge(g, 6, 8);
+    add_edge(g, 8, 6);
+    add_edge(g, 7, 8);
+    add_edge(g, 8, 7);
+    assert(connected_components(g) == 3);
+    delete_graph(g);
+}
+
+/*  test the following undirected graph
+
+    bipartite
+    +---+   +---+   +---+
+    | 0 |---| 1 |---| 2 |   
+    +---+   +---+   +---+
+
+    not bipartite
+         +---+
+      +--| 0 |--+
+      |  +---+  |
+      |         |
+    +---+     +---+
+    | 1 |-----| 2 |
+    +---+     +---+
+
+*/
+
+void test_two_color(void)
+{
+    printf("Test two color\n");
+    struct Graph * g = new_graph(5, 0);
+    add_edge(g, 0, 1);
+    add_edge(g, 1, 0);
+    add_edge(g, 1, 2);
+    add_edge(g, 2, 1);
+    two_color(g);
+
+    add_edge(g, 0, 2);
+    add_edge(g, 2, 0);
+    two_color(g);
+    delete_graph(g);
+}
+
+/*  test following directed weighted graph
+         +---+
+         | 0 |   
+         +---+
+        /     \
+       /       \
+    +---+    +---+
+    | 1 |----| 2 |
+    +---+    +---+
+
+*/
+
+void test_weighted_graph(void)
+{
+    printf("Test weighted graph\n");
+    struct Graph * g = new_graph(5, 1);
+    add_wt_edge(g, 0, 1, 2);
+    add_wt_edge(g, 1, 2, 4);
+    add_wt_edge(g, 2, 0, 2);
+
+    assert(g->array[0].head->weight == 2);
+    assert(g->array[1].head->weight == 1);
+    delete_graph(g);
+}
+
+/*  test following undirected graph
+
+     0
+
+    1
+         4
+    2
+
+     3
+
+*/
+
+void test_primt_mst(void)
+{
+    printf("Test spanning tree\n");
+    struct Graph * g = new_graph(5, 0);
+    add_wt_edge(g, 0, 1, 1);
+    add_wt_edge(g, 0, 2, 3);
+    add_wt_edge(g, 0, 3, 5);
+    add_wt_edge(g, 0, 4, 2);
+
+    add_wt_edge(g, 1, 0, 1);
+    add_wt_edge(g, 1, 2, 1);
+    add_wt_edge(g, 1, 3, 3);
+    add_wt_edge(g, 1, 4, 2);
+
+    add_wt_edge(g, 2, 0, 3);
+    add_wt_edge(g, 2, 1, 1);
+    add_wt_edge(g, 2, 3, 1);
+    add_wt_edge(g, 2, 4, 2);
+
+    add_wt_edge(g, 3, 0, 5);
+    add_wt_edge(g, 3, 1, 3);
+    add_wt_edge(g, 3, 2, 1);
+    add_wt_edge(g, 3, 4, 2);
+
+    add_wt_edge(g, 4, 0, 2);
+    add_wt_edge(g, 4, 1, 2);
+    add_wt_edge(g, 4, 2, 2);
+    add_wt_edge(g, 4, 3, 2);
+    
+    prim_mst(g, 0);
+    prim_mst(g, 1); 
+    delete_graph(g);
+}
 
 void test_stack(void)
 {
