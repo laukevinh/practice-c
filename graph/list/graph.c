@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include "graph.h"
 #include "queue.h"
+#include "../../heap/heap.h"
 #define TRUE 1
 #define FALSE 0
 #define NOCOLOR 0
@@ -456,4 +457,15 @@ int two_color(struct Graph * g)
         bfs_color(g, i, color, discovered, parent);
     }
     return TRUE;
+}
+
+void prim_mst(struct Graph * g, int v)
+{
+    // dfs, select lowest cost edge without creating cycle
+    // done when fully explored all nodes
+    int fringe[g->nVertices];
+
+    for (int i=0; i<g->nVertices; i++) {
+        fringe[i] = -1;
+    }
 }

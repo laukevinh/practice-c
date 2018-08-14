@@ -2,6 +2,7 @@
 #include <assert.h>
 #include "graph.h"
 #include "queue.h"
+#include "heap.h"
 
 int main(void)
 {
@@ -12,6 +13,7 @@ int main(void)
     test_connected_components();
     test_two_color();
     test_weighted_graph();
+    test_heap();
     //test_stack();
     return 0;
 }
@@ -321,6 +323,37 @@ void test_primt_mst(void)
     prim_mst(g, 0);
     prim_mst(g, 1); 
     delete_graph(g);
+}
+
+void test_heap(void)
+{
+    printf("Test heap\n");
+    struct Heap * h = new_heap();
+    for (int i=0; i<32; i++)
+        insert_heap(h, i, i, i);
+    insert_heap(h, 99, 99, 99);
+    for (int i=0; i<33; i++)
+        printf("Edge (%d %d %d)\n", h->edges[i].v1, h->edges[i].v2, h->edges[i].wt);
+    printf("heap cap and size %d %d \n", h->capacity, h->size);
+    for (int i=0; i<18; i++) {
+        struct Edge temp = extract_max(h);
+        printf("Extract max (%d %d %d)\n", temp.v1, temp.v2, temp.wt);
+    }
+    printf("heap cap and size %d %d \n", h->capacity, h->size);
+    printf("Get max (%d %d %d)\n", get_max(h).v1, get_max(h).v2, get_max(h).wt);
+    printf("Scramble heap\n");
+    for (int i=0; i<h->size; i++) {
+        h->edges[i].v1 = h->edges[i].v2 = h->edges[i].wt = i;
+        printf("Edge (%d %d %d)\n", h->edges[i].v1, h->edges[i].v2, h->edges[i].wt);
+    }
+    printf("Heapify\n");
+    heapify(h);
+    for (int i=0; i<h->size; i++) {
+        printf("Edge (%d %d %d)\n", h->edges[i].v1, h->edges[i].v2, h->edges[i].wt);
+    }
+
+
+    delete_heap(h);
 }
 
 void test_stack(void)
