@@ -13,7 +13,7 @@ int main(void)
     test_connected_components();
     test_two_color();
     test_weighted_graph();
-    test_heap();
+    //test_heap();
     //test_stack();
     return 0;
 }
@@ -332,27 +332,32 @@ void test_heap(void)
     for (int i=0; i<32; i++)
         insert_heap(h, i, i, i);
     insert_heap(h, 99, 99, 99);
-    for (int i=0; i<33; i++)
-        printf("Edge (%d %d %d)\n", h->edges[i].v1, h->edges[i].v2, h->edges[i].wt);
-    printf("heap cap and size %d %d \n", h->capacity, h->size);
-    for (int i=0; i<18; i++) {
-        struct Edge temp = extract_max(h);
-        printf("Extract max (%d %d %d)\n", temp.v1, temp.v2, temp.wt);
-    }
-    printf("heap cap and size %d %d \n", h->capacity, h->size);
-    printf("Get max (%d %d %d)\n", get_max(h).v1, get_max(h).v2, get_max(h).wt);
+    //  test inserts maintain max heap prop
+    assert(h->edges[0].wt == 99);
+    assert(h->edges[1].wt == 31);
+    //  test capacity and size expand
+    assert(h->capacity == 64);
+    assert(h->size == 33);
+
+    for (int i=0; i<18; i++)
+        extract_max(h);
+    //  test capacity and size contract after pops
+    assert(h->capacity == 32);
+    assert(h->size == 15);
+
     printf("Scramble heap\n");
-    for (int i=0; i<h->size; i++) {
+    for (int i=0; i<h->size; i++)
         h->edges[i].v1 = h->edges[i].v2 = h->edges[i].wt = i;
-        printf("Edge (%d %d %d)\n", h->edges[i].v1, h->edges[i].v2, h->edges[i].wt);
-    }
-    printf("Heapify\n");
-    heapify(h);
-    for (int i=0; i<h->size; i++) {
-        printf("Edge (%d %d %d)\n", h->edges[i].v1, h->edges[i].v2, h->edges[i].wt);
-    }
 
-
+    printf("Build max heap\n");
+    build_max_heap(h);
+    assert(h->edges[0].wt == 14);
+    assert(h->edges[h->size-1].wt == 0);
+    
+    printf("heap sort\n");
+    heap_sort(h);
+    for (int i=0; i<h->size; i++)
+        assert(h->edges[i].wt == i);
     delete_heap(h);
 }
 

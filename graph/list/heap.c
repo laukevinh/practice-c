@@ -62,11 +62,6 @@ void sift_up (struct Heap * h, int i)
     int parent_i = parent(i);
     if (parent_i >= 0) {
         if (h->edges[i].wt > h->edges[parent_i].wt) {
-            /*
-            struct Edge temp = h->edges[i];
-            h->edges[i] = h->edges[parent_i];
-            h->edges[parent_i] = temp;
-            */
             swap(&h->edges[i], &h->edges[parent_i]);
             sift_up(h, parent_i);
         }
@@ -84,7 +79,7 @@ void insert_heap (struct Heap * h, int v1, int v2, int wt)
     sift_up(h, h->size-1);
 }
 
-void sift_down (struct Heap * h, int i)
+void sift_down(struct Heap * h, int i)
 {
     int right_i = right_child(i);
     int left_i = left_child(i);
@@ -92,17 +87,13 @@ void sift_down (struct Heap * h, int i)
         // if root less than either child, swap with larger
         int larger_i = (h->edges[left_i].wt > h->edges[right_i].wt) ? left_i : right_i;
         if (h->edges[i].wt < h->edges[larger_i].wt) {
-            struct Edge temp = h->edges[larger_i];
-            h->edges[larger_i] = h->edges[i];
-            h->edges[i] = temp;
+            swap(&h->edges[i], &h->edges[larger_i]);
             sift_down(h, larger_i);
         }
     } else if (left_i < h->size) {
         // if root less than left child, swap
         if (h->edges[i].wt < h->edges[left_i].wt) {
-            struct Edge temp = h->edges[left_i];
-            h->edges[left_i] = h->edges[i];
-            h->edges[i] = temp;
+            swap(&h->edges[i], &h->edges[left_i]);
             sift_down(h, left_i);
         }
     }
@@ -129,40 +120,55 @@ struct Edge get_max(struct Heap * h)
     printf("Cannot get max from empty heap\n");
 }
 
-void heapify(struct Heap * h)
+/*  We start with the parent of the last node in
+    the heap, i.e. the first non-leaf node.
+    We choose this because its children are leaves, 
+    and therefore max heaps by definition. To
+    maintain the max heap property, we use sift_down
+    at this node.
+
+    We continue moving towards the heap root, fixing
+    the max heap property using sift_down. Sift_down
+    works because there is at most one node (the parent)
+    that may be causing the max heap violation.
+*/
+
+
+void build_max_heap(struct Heap * h)
 {
-    int n = parent(h->size-1);
-    for (int j=0; j<n; j++) {
-        for (int i=n; i>=j; i--) {
-            int right_i = right_child(i);
-            int left_i = left_child(i);
-            if (right_i < h->size) {
-                // if root less than either child, swap with larger
-                int larger_i = (h->edges[left_i].wt > h->edges[right_i].wt) ? left_i : right_i;
-                if (h->edges[i].wt < h->edges[larger_i].wt) {
-                    struct Edge temp = h->edges[larger_i];
-                    h->edges[larger_i] = h->edges[i];
-                    h->edges[i] = temp;
-                }
-            } else if (left_i < h->size) {
-                // if root less than left child, swap
-                if (h->edges[i].wt < h->edges[left_i].wt) {
-                    struct Edge temp = h->edges[left_i];
-                    h->edges[left_i] = h->edges[i];
-                    h->edges[i] = temp;
-                }
-            }
+    for (int i=(h->size-1)/2; i>=0; i--) {
+        sift_down(h, i);
+    }
+}            
+
+/*  same as sift_down, but takes an additional param
+    size so heap->size doesn't change during sort.
+*/
+
+void sift_down_for_sort(struct Heap * h, int i, int size)
+{
+    int right_i = right_child(i);
+    int left_i = left_child(i);
+    if (right_i < size) {
+        // if root less than either child, swap with larger
+        int larger_i = (h->edges[left_i].wt > h->edges[right_i].wt) ? left_i : right_i;
+        if (h->edges[i].wt < h->edges[larger_i].wt) {
+            swap(&h->edges[i], &h->edges[larger_i]);
+            sift_down_for_sort(h, larger_i, size);
+        }
+    } else if (left_i < size) {
+        // if root less than left child, swap
+        if (h->edges[i].wt < h->edges[left_i].wt) {
+            swap(&h->edges[i], &h->edges[left_i]);
+            sift_down_for_sort(h, left_i, size);
         }
     }
 }
-            
-/*
-void sift_up (struct Heap * h, struct HeapNode n); // needed for insert
-struct HeapNode * get_max (struct Heap * h); // returns the max item, without removing it
-int get_size(struct Heap * h); // return number of elements stored
-int is_empty(struct Heap * h); // returns true if heap contains no elements
-struct HeapNode * extract_max(struct Heap * h); // returns the max item, removing it
-void sift_down(struct Heap * h); // needed for extract_max
-void remove(struct Heap * h, int i); // removes item at index x
-void heap_sort(strcut Heap * h); // take an unsorted array and turn it into a sorted array in-place using a max heap
-*/
+
+void heap_sort(struct Heap * h)
+{
+    for (int i=h->size-1; i>=0; i--) {
+        swap(&h->edges[0], &h->edges[i]);
+        sift_down_for_sort(h, 0, i);
+    }
+}
