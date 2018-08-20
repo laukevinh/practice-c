@@ -13,7 +13,8 @@ int main(void)
     test_connected_components();
     test_two_color();
     test_weighted_graph();
-    //test_heap();
+    test_prim_mst();
+    test_heap();
     //test_stack();
     return 0;
 }
@@ -291,7 +292,7 @@ void test_weighted_graph(void)
 
 */
 
-void test_primt_mst(void)
+void test_prim_mst(void)
 {
     printf("Test spanning tree\n");
     struct Graph * g = new_graph(5, 0);
@@ -358,6 +359,35 @@ void test_heap(void)
     heap_sort(h);
     for (int i=0; i<h->size; i++)
         assert(h->edges[i].wt == i);
+    delete_heap(h);
+
+    printf("Test min heap\n");
+    h = new_heap();
+    for (int i=0; i<32; i++)
+        insert_min_heap(h, i, i, i);
+    insert_min_heap(h, 99, 99, 99);
+    //  test inserts maintain min heap prop
+    assert(h->edges[0].wt == 0);
+    assert(h->edges[1].wt == 1);
+    //  test capacity and size expand
+    assert(h->capacity == 64);
+    assert(h->size == 33);
+
+    for (int i=0; i<18; i++)
+        extract_min(h);
+    //  test capacity and size contract after pops
+    assert(h->capacity == 32);
+    assert(h->size == 15);
+
+    printf("Scramble heap\n");
+    for (int i=0; i<h->size; i++)
+        h->edges[i].v1 = h->edges[i].v2 = h->edges[i].wt = h->size-1-i;
+
+    printf("Build min heap\n");
+    build_min_heap(h);
+    assert(h->edges[0].wt == 0);
+    assert(h->edges[h->size-1].wt == 14);
+    
     delete_heap(h);
 }
 

@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include "graph.h"
 #include "queue.h"
-#include "../../heap/heap.h"
+#include "heap.h"
 #define TRUE 1
 #define FALSE 0
 #define NOCOLOR 0
@@ -459,13 +459,41 @@ int two_color(struct Graph * g)
     return TRUE;
 }
 
+/*  Use a min Heap called fringe to track nodes to explore.
+    Use another Graph called tprim to track minimum spanning tree.
+
+    Given some starting vertex v, look for the lowest weight neighbor
+    w that doesn't create a cycle and add it to tprim. Continue the
+    process of adding the next lowest weight neighbor by comparing
+    newly discovered neighbors with all previously discovered neighbors.
+    Stop once all vertices that can be connected are connected to tprim.
+*/
 void prim_mst(struct Graph * g, int v)
 {
-    // dfs, select lowest cost edge without creating cycle
-    // done when fully explored all nodes
-    int fringe[g->nVertices];
+    struct Graph * tprim = new_graph(g->nVertices, g->directed);
+    struct Heap * fringe = new_heap();
+    struct AdjListNode * curr = g->array[v].head;
 
-    for (int i=0; i<g->nVertices; i++) {
-        fringe[i] = -1;
+    while (curr != NULL) {
+        insert_min_heap(fringe, v, curr->data, curr->weight);
+        curr = curr->next;
     }
+
+    while (fringe->size > 0) {
+        struct Edge curr = extract_min(fringe);
+        if (tprim->array[curr.v1].head == NULL || tprim->array[curr.v2].head == NULL) {
+            add_wt_edge(tprim, curr.v1, curr.v2, curr.wt);
+            add_wt_edge(tprim, curr.v2, curr.v1, curr.wt);
+            struct AdjListNode * temp = g->array[curr.v2].head;
+            while (temp != NULL) {
+                if (tprim->array[temp->data].head == NULL)
+                    insert_min_heap(fringe, curr.v2, temp->data, temp->weight);
+                temp = temp->next;
+            }
+        }
+    }
+
+    print_graph(tprim);
+    delete_heap(fringe);
+    delete_graph(tprim);
 }

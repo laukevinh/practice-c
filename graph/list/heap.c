@@ -79,6 +79,28 @@ void insert_heap (struct Heap * h, int v1, int v2, int wt)
     sift_up(h, h->size-1);
 }
 
+void sift_min_up (struct Heap * h, int i)
+{
+    int parent_i = parent(i);
+    if (parent_i >= 0) {
+        if (h->edges[i].wt < h->edges[parent_i].wt) {
+            swap(&h->edges[i], &h->edges[parent_i]);
+            sift_min_up(h, parent_i);
+        }
+    }
+}
+
+void insert_min_heap (struct Heap * h, int v1, int v2, int wt)
+{
+    if (h->size + 1 > h->capacity)
+        resize_heap(h, h->capacity * RESIZE_FACTOR);
+    h->size++;
+    h->edges[h->size-1].v1 = v1;
+    h->edges[h->size-1].v2 = v2;
+    h->edges[h->size-1].wt = wt;
+    sift_min_up(h, h->size-1);
+}
+
 void sift_down(struct Heap * h, int i)
 {
     int right_i = right_child(i);
@@ -113,6 +135,40 @@ struct Edge extract_max (struct Heap * h)
     printf("Cannot extract max from empty heap\n");
 }
 
+void sift_min_down(struct Heap * h, int i)
+{
+    int right_i = right_child(i);
+    int left_i = left_child(i);
+    if (right_i < h->size) {
+        // if root greater than either child, swap with lesser
+        int lesser_i = (h->edges[left_i].wt < h->edges[right_i].wt) ? left_i : right_i;
+        if (h->edges[i].wt > h->edges[lesser_i].wt) {
+            swap(&h->edges[i], &h->edges[lesser_i]);
+            sift_min_down(h, lesser_i);
+        }
+    } else if (left_i < h->size) {
+        // if root less than left child, swap
+        if (h->edges[i].wt > h->edges[left_i].wt) {
+            swap(&h->edges[i], &h->edges[left_i]);
+            sift_min_down(h, left_i);
+        }
+    }
+}
+
+struct Edge extract_min (struct Heap * h)
+{
+    if (h->size > 0) {
+        struct Edge min = h->edges[0];
+        h->edges[0] = h->edges[h->size-1];
+        h->size--;
+        if (h->size < h->capacity / DOWNSIZE_THRESHOLD)
+            resize_heap(h, h->capacity / RESIZE_FACTOR);
+        sift_min_down(h, 0);
+        return min;
+    }
+    printf("Cannot extract min from empty heap\n");
+}
+
 struct Edge get_max(struct Heap * h)
 {
     if (h->size > 0)
@@ -138,6 +194,13 @@ void build_max_heap(struct Heap * h)
 {
     for (int i=(h->size-1)/2; i>=0; i--) {
         sift_down(h, i);
+    }
+}            
+
+void build_min_heap(struct Heap * h)
+{
+    for (int i=(h->size-1)/2; i>=0; i--) {
+        sift_min_down(h, i);
     }
 }            
 
