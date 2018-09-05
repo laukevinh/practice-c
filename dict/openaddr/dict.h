@@ -29,6 +29,3 @@ void test_new_dict(void);
 void test_get_prime(void);
 void test_resize(void);
 void test_hash(void);
-void test_add(void);
-void test_get(void);
-void test_del(void);

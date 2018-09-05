@@ -92,3 +92,105 @@
                                 |      |
                                 +------+
 */
+
+/* Hash table with open addressing
+
+    Open addressing does not use linkedlists to deal
+    with collisions. It uses probing on a single array
+    i.e. if there is a collision, the hash function
+    is modified slightly and tries for a different slot.
+    Thus, total slots >= total elements, because we
+    cannot arbitrarily add more elements like linkedlists.
+
+    To resolve collisions with probing, the hash function
+    uses the number of trials i.e. collisions occurred to
+    modify the hash function and return a different slot.
+    There can be as many as m-1 collisions where
+    m = number of elements, thus there needs to be m-1 ways
+    to hash i.e. h(key, trial_count).
+
+    insert
+    
+    given a key k to insert, use hash(key, trial_count) to
+    find an empty slot to place k. 
+
+    hash(k1, 1) == 4. if slot 4 is empty, add it in.
+    hash(k2, 1) == 4. collision in slot 4, so next trial.
+    hash(k2, 2) == 6. if slot 6 is empty, add it in.
+    
+        0      1      2      3      4      5      6   
+    +------------------------------------------------+
+    |      |      |      |      |      |      |      |
+    | NULL | NULL | NULL | NULL |  k1  | NULL |  k2  |
+    |      |      |      |      |      |      |      |
+    +------------------------------------------------+
+
+    search 
+    
+    given a search key k, compare against slot key v.
+    if k != v, keep trying. If v reaches none, search
+    key doesn't exist in table.
+
+    search key = k2
+    hash(k2, 1) == 4. search key k2 != slot key k1, continue
+    hash(k2, 2) == 6. search key k2 == slot key k2, return
+
+    delete
+
+    when you find the key to delete, replace with DELETED
+    rather than NULL so that search will still work.
+    Remember that insert needs to write to slots with either
+    NULL or DELETED so we can reuse slots, and search needs
+    to continue even if it encounters DELETED.
+
+    delete k1; search k2
+    hash(k2, 1) == 4. slot key DELETE so continue
+    hash(k2, 2) == 6. search key == slot key, return
+
+        0      1      2      3      4      5      6   
+    +------------------------------------------------+
+    |      |      |      |      |      |      |      |
+    | NULL | NULL | NULL | NULL |DELETE| NULL |  k2  |
+    |      |      |      |      |      |      |      |
+    +------------------------------------------------+
+
+    Probing strategies
+
+    Linear probing: h(k, i) = (h'(k) + i) mod m
+    where h'(k) is the original hash function.
+    Problem is clustering, consecutive groups of
+    occupied slots. Like finding parking for your car.
+
+        +------+    say there is a cluster from slots
+        |      |    40 to 60. say you're trying to insert
+     40 |  k2  |    k5 and its hash returns slot 40.
+        |      |
+        +------+    Linear probing would give you next slot
+        |      |    41, 42, ... until you hit 61, the first 
+     .. |  ..  |    empty slot.
+        |      |    
+        +------+    So even with a good original hash that
+        |      |    uniformly distributes, a bad probing
+     60 |  k8  |    strategy will lower performance.
+        |      |
+        +------+
+        |      |
+     61 | NULL |
+        |      |
+        +------+
+
+    Double hashing: h(k, i) = (h1(k) + i * h2(k)) mod m
+    where h1(k) and h2(k) are ordinary hash functions.
+    To ensure this is a permutation, h2(k) needs to be
+    relatively prime to m. One way to do this is
+    m = 2^r and h2(k) for all k is odd.
+
+    Need to be thoughtful about load factor because as
+    alpha appraoches 1, the amount of time for insert,
+    search and delete will be a large constant, around m.
+
+    Also, there is a lag in deleting keys. Search will hit
+    a bunch of DELETED flags so until table is resized and
+    rehashed, search will still have to probe same length.
+    
+*/

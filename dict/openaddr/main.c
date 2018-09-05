@@ -8,11 +8,6 @@ int main(void)
     //test_hash();
     //test_get_prime();
     test_resize();
-    /*
-    test_add();
-    test_get();
-    test_del();
-    */
 }
 
 void test_new_dict(void)
@@ -62,58 +57,34 @@ void test_resize(void)
     assert(get(d, "a") == 97);
     assert(get(d, "d") == 100);
     assert(get(d, "e") == -1);
-    /*
-    printf("(%s,%d)\n", "a", get(d, "a"));
-    printf("(%s,%d)\n", "b", get(d, "b"));
-    printf("(%s,%d)\n", "c", get(d, "c"));
-    printf("(%s,%d)\n", "d", get(d, "d"));
-    printf("(%s,%d)\n", "e", get(d, "e"));
-    */
-    assert(d->n == 4);
-    assert(d->m == 4);
-    //printf("Tble ele/size: %d/%d\n", d->n, d->m);
-    resize_tbl(d);
-    //printf("Tble ele/size: %d/%d\n", d->n, d->m);
+    //assert(d->n == 4);
+    //assert(d->m == 4);
+
+    //assert(resize_tbl(d) == 4);
     assert(d->n == 4);
     assert(d->m == 8);
+
     add(d, "e", 101);
-    //printf("Tble ele/size: %d/%d\n", d->n, d->m);
     assert(d->n == 5);
     assert(d->m == 8);
     assert(get(d, "e") == 101);
-    //printf("(%s,%d)\n", "e", get(d, "e"));
+
     del(d, "a");
     assert(d->n == 4);
     assert(d->m == 8);
     assert(get(d, "a") == -1);
-    //printf("Deleted a\n");
-    //printf("(%s,%d)\n", "a", get(d, "a"));
+
     add(d, "a", 197);
     assert(d->n == 5);
     assert(d->m == 8);
     assert(get(d, "a") == 197);
-    //printf("(%s,%d)\n", "a", get(d, "a"));
-
-    /*
-    char dest[3];
-    dest[0] = 'a';
-    dest[1] = '\0';
-    for (int i=0; i<26; i++) {
-        add(d, dest, i);
-        dest[0] = dest[0] + 1;
-    }
-    dest[0] = 'a';
-    dest[1] = 'a';
-    dest[2] = '\0';
-    for (int i=0; i<26; i++) {
-        add(d, dest, i);
-        dest[1] = dest[1] + 1;
-    }
-    for (int i=0; i<d->m; i++) {
-        struct Node * node = d->head[i];
-        printf("(%s,%d)\n", node->key, node->val);
-    }
-    */
+    del(d, "a");
+    del(d, "b");
+    del(d, "c");
+    del(d, "d");
+    del(d, "e");
+    assert(d->n == 0);
+    assert(d->m == 4);
     delete_dict(d);
 }
 
@@ -121,42 +92,3 @@ void test_get_prime(void)
 {
     printf("Prime: %d\n", pltn(100));
 }
-
-/*
-void test_add(void)
-{
-    struct Dict* dict = new_dict(13);
-    add(dict, "he", 2);
-    add(dict, "hello", 5);
-    add(dict, "kevin", 5);
-    add(dict, "lissu", 8);
-    printf("Test add\n");
-    print_items(dict);
-    delete_dict(dict);
-}
-
-void test_get(void)
-{
-    struct Dict* dict = new_dict(13);
-    add(dict, "he", 2);
-    add(dict, "hello", 5);
-    add(dict, "kevin", 5);
-    add(dict, "lissu", 8);
-    printf("Test get kevin: %d\n", get(dict, "kevin"));
-    printf("Test get lissu: %d\n", get(dict, "lissu"));
-    delete_dict(dict);
-}
-
-void test_del(void)
-{
-    struct Dict* dict = new_dict(13);
-    add(dict, "he", 2);
-    add(dict, "hello", 5);
-    add(dict, "kevin", 5);
-    add(dict, "lissu", 8);
-    del(dict, "he");
-    printf("Test del he\n");
-    print_items(dict);
-    delete_dict(dict);
-}
-*/

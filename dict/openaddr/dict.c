@@ -1,5 +1,5 @@
-/*  Dictionary implementation with open addr.
-    Uses division method. No resizing.
+/*  Dictionary implementation using open address.
+    Uses division method and double hashing. 
 */
 
 #include <stdio.h>
@@ -44,8 +44,8 @@ struct Dict * new_dict(void)
 void delete_dict(struct Dict * d)
 {
     for (int i=0; i<d->m; i++)
-        if (*(d->head+i) != NULL)
-            free(*(d->head+i));
+        if (d->head[i] != NULL && d->head[i] != &DELETED)
+            free(d->head[i]);
     free(d->head);
     free(d);
 }
@@ -122,9 +122,9 @@ int hash(unsigned long k, int tblsize, int t)
 }
 
 /*  1. pre-hash key (string)
-    2. double hash trial 0
+    2. try double hash
     3. if collision try again until no collision
-    4. if NULL the key doesn't exist
+    4. if NULL or number of trials > m, the key doesn't exist
 */
 
 struct Node ** get_util(struct Dict * dict, char * key)
@@ -142,23 +142,13 @@ struct Node ** get_util(struct Dict * dict, char * key)
         h = dblh_probe(djb2(key), dict->m, ++t);
         curr = *(dict->head + h);
     }
-    //return (t >= dict->m) ? NULL : curr;
     return (t >= dict->m) ? NULL : dict->head + h;
 }
 
 int get(struct Dict *dict, char *key)
 {
-    /*
-    struct Node * node = get_util(dict, key);
-    if (node == NULL) {
-        printf("Key %s doesn't exist\n", key);
-        return -1;
-    } else {
-        return node->val;
-    }
-    */
     struct Node ** node = get_util(dict, key);
-    if (node == NULL) {
+    if (node == NULL || *node == NULL || *node == &DELETED) {
         printf("Key %s doesn't exist\n", key);
         return -1;
     } else {
@@ -166,8 +156,10 @@ int get(struct Dict *dict, char *key)
     }
 }
 
-void add_util(struct Dict * dict, char *key, int value, struct Node * node)
+void add_util(struct Dict * dict, struct Node * node)
 {
+    char * key = node->key;
+    int value = node->val;
     int t = 0;
     int h = dblh_probe(djb2(key), dict->m, t);
     struct Node * curr = *(dict->head+h);
@@ -189,63 +181,19 @@ void add_util(struct Dict * dict, char *key, int value, struct Node * node)
     }
 }
 
-void add(struct Dict * dict, char *key, int value)
+void make_empty_tbl(struct Dict * d)
 {
-    /*
-    int t = 0;
-    int h = dblh_probe(djb2(key), dict->m, t);
-    struct Node * curr = *(dict->head+h);
-    while (TRUE) {
-        if (t >= dict->m)
-            break;
-        if (curr == NULL)
-            break;
-        if (curr == &DELETED)
-            break;
-        h = dblh_probe(djb2(key), dict->m, ++t);
-        curr = *(dict->head + h);
-    }
-    if (t >= dict->m) {
-        printf("Dictionary full\n");
-    } else {
-        dict->head[h] = new_node(key, value);
-        dict->n++;
-    }
-    */
-    add_util(dict, key, value, new_node(key, value));
+    d->head = malloc(sizeof(struct Node * ) * d->m);
+    for (int i=0; i<d->m; i++)
+        *(d->head + i) = NULL;
 }
 
-void del(struct Dict *dict, char *key)
+void copy_tbl_util(struct Dict * d, int old_m, struct Node ** old_head)
 {
-    /*
-    int t = 0;
-    int h = dblh_probe(djb2(key), dict->m, t);
-    struct Node * curr = *(dict->head+h);
-    while (TRUE) {
-        if (t >= dict->m)
-            break;
-        if (curr == NULL)
-            break;
-        if (curr != &DELETED && strcmp(curr->key, key) == 0)
-            break;
-        h = dblh_probe(djb2(key), dict->m, ++t);
-        curr = *(dict->head + h);
-    }
-    if (curr == NULL || t >= dict->m) {
-        printf("Key %s doesn't exist\n", key);
-    } else {
-        free(dict->head[h]);
-        *(dict->head+h) = &DELETED;
-        dict->n--;
-    }
-    */
-    struct Node ** node = get_util(dict, key);
-    if (node == NULL) {
-        printf("Key %s doesn't exist\n", key);
-    } else {
-        free(*node);
-        *node = &DELETED;
-        dict->n--;
+    for (int i=0; i<old_m; i++) {
+        struct Node * temp = *(old_head+i);
+        if (temp != NULL && temp != &DELETED)
+            add_util(d, *(old_head+i)); 
     }
 }
 
@@ -253,31 +201,44 @@ int resize_tbl(struct Dict * d)
 {
     int old_m = d->m;
     int old_n = d->n;
-    int alpha = d->n / d->m;
-    if (alpha > UPSIZE_THRESHOLD) {
-        d->m = d->m * RESIZE_FACTOR;
+    struct Node ** old_head = d->head;
+    double alpha = (double) d->n / d->m;
+
+    if (alpha <= UPSIZE_THRESHOLD && alpha >= DOWNSIZE_THRESHOLD) {
+        //printf("Alpha %d/%d within thresholds\n", d->n, d->m);
+        return 0;
+    } else {
         d->n = 0;
-        struct Node ** old_head = d->head;
-        d->head = malloc(sizeof(struct Node * ) * d->m);
-        for (int i=0; i<d->m; i++)
-            *(d->head + i) = NULL;
-        for (int i=0; i<old_m; i++) {
-            struct Node * temp = *(old_head+i);
-            add_util(d, temp->key, temp->val, *(old_head+i)); 
-        }
+        if (alpha > UPSIZE_THRESHOLD) {
+            d->m = d->m * RESIZE_FACTOR;
+        } else if (alpha < DOWNSIZE_THRESHOLD && d->m / RESIZE_FACTOR >= MIN_CAPACITY) {
+            d->m = d->m / RESIZE_FACTOR;
+        } 
+        if (d->m == old_m)
+            return 0;
+        make_empty_tbl(d);
+        copy_tbl_util(d, old_m, old_head);
         free(old_head);
-    } else if (alpha < DOWNSIZE_THRESHOLD && d->m / RESIZE_FACTOR > MIN_CAPACITY) {
-        d->m = d->m / RESIZE_FACTOR;
-        d->n = 0;
-        struct Node ** old_head = d->head;
-        d->head = malloc(sizeof(struct Node * ) * d->m);
-        for (int i=0; i<d->m; i++)
-            *(d->head + i) = NULL;
-        for (int i=0; i<old_m; i++) {
-            struct Node * temp = *(old_head+i);
-            if (temp != NULL && temp != &DELETED)
-                add_util(d, temp->key, temp->val, *(old_head+i)); 
-        }
-        free(old_head);
+        return d->m - old_m;
     }
 }
+
+void add(struct Dict * dict, char *key, int value)
+{
+    resize_tbl(dict);
+    add_util(dict, new_node(key, value));
+}
+
+void del(struct Dict *dict, char *key)
+{
+    struct Node ** node = get_util(dict, key);
+    if (node == NULL || *node == NULL || *node == &DELETED) {
+        printf("Key %s doesn't exist\n", key);
+    } else {
+        free(*node);
+        *node = &DELETED;
+        dict->n--;
+    }
+    resize_tbl(dict);
+}
+
