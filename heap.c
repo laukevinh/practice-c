@@ -1,6 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+/* Uses resizable array as heap. Adds heap specific
+    methods. */
+
 #define SIZE 8
 #define GROW 2
 #define SHRINK 4
