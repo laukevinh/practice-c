@@ -21,6 +21,10 @@ void print_inorder(struct Node *);
 int get_node_count(struct Node *);
 int get_height(struct Node *);
 struct Node *simple_rm(struct Node *, int);
+struct Node *successor_node(struct Node *, int);
+int successor(struct Node *, int);
+struct Node *predecessor_node(struct Node *, int);
+int predecessor(struct Node *, int);
 
 int main(void)
 {
@@ -42,6 +46,16 @@ int main(void)
     printf("\n");
     simple_rm(root, 100);
     simple_rm(root, 10);
+    assert(in_tree(root, 10) == 0);
+    assert(in_tree(root, 80) == 1);
+    assert(successor(root, 60) == 65);
+    assert(successor(root, 20) == 30);
+    assert(successor(root, 90) == -1);
+    assert(successor(root, 10) == -1);
+    assert(predecessor(root, 65) == 60);
+    assert(predecessor(root, 30) == 20);
+    assert(predecessor(root, 20) == -1);
+    assert(predecessor(root, 10) == -1);
     print_inorder(root);
     printf("\n");
     return 0;
@@ -81,6 +95,15 @@ struct Node *get_min_node(struct Node *root)
     return root;
 }
 
+struct Node *get_max_node(struct Node *root)
+{
+    if (root == NULL)
+        return root;
+    while (root->right != NULL)
+        root = root->right;
+    return root;
+}
+
 int get_min(struct Node *root)
 {
     struct Node *min;
@@ -91,11 +114,27 @@ int get_min(struct Node *root)
 
 int get_max(struct Node *root)
 {
+    struct Node *max;
+
+    max = get_max_node(root);
+    return (max == NULL) ? -1 : max->val;
+}
+
+struct Node *get(struct Node *root, int val)
+{
     if (root == NULL)
-        return -1;
-    while (root->right != NULL)
-        root = root->right;
-    return root->val;
+        return NULL;
+    else if (val < root->val)
+        return get(root->left, val);
+    else if (val > root->val)
+        return get(root->right, val);
+    else
+        return root;
+}
+
+int in_tree(struct Node *root, int val)
+{
+    return (get(root, val) == NULL) ? 0 : 1;
 }
 
 void print_inorder(struct Node *root)
@@ -143,7 +182,7 @@ struct Node *simple_rm(struct Node *root, int val)
     else if (val > root->val)
         root->right = simple_rm(root->right, val);
     else {  /* val == root->val */
-        if (root->right == NULL) {
+        if (root->right == NULL) {  /* covers leaf case too */
             if ((node = root->left) != NULL)
                 node->parent = root->parent;
         } else {
@@ -170,4 +209,71 @@ struct Node *simple_rm(struct Node *root, int val)
         return node;
     }
     return root;
+}
+
+/* successor_node:  find next larger node */
+/* psuedocode:
+    once you find node containing target value
+    if node has right child
+        return min node in right child tree
+    else 
+        return first ancestor larger than target value */
+/* alternatively: 
+    if target value < current node and >= left child,
+    check if there is successor in left child. If not,
+    return current node, the parent of the target value */
+struct Node *successor_node(struct Node *root, int val)
+{
+    struct Node *node;
+
+    if (root == NULL)
+        return NULL;
+    if (val < root->val) {
+        if (root->left != NULL)
+            if (val >= root->left->val) {
+                node = successor_node(root->left, val);
+                return node ? node : root;
+            }
+        return successor_node(root->left, val);
+    } else if (val > root->val)
+        return successor_node(root->right, val);
+    else {
+        node = get_min_node(root->right);
+        return node ? node : NULL;
+    }
+}
+
+int successor(struct Node *root, int val)
+{
+    struct Node *node;
+
+    return (node = successor_node(root, val)) ? node->val : -1;
+}
+
+struct Node *predecessor_node(struct Node *root, int val)
+{
+    struct Node *node;
+
+    if (root == NULL)
+        return NULL;
+    if (val < root->val)
+        return predecessor_node(root->left, val);
+    else if (val > root->val) {
+        if (root->right != NULL)
+            if (val <= root->right->val) {
+                node = predecessor_node(root->right, val);
+                return node ? node : root;
+            }
+        return predecessor_node(root->right, val);
+    } else {
+        node = get_max_node(root->left);
+        return node ? node : NULL;
+    }
+}
+
+int predecessor(struct Node *root, int val)
+{
+    struct Node *node;
+
+    return (node = predecessor_node(root, val)) ? node->val : -1;
 }
