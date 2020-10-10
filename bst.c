@@ -23,6 +23,7 @@ void print_inorder(struct Node *);
 int get_node_count(struct Node *);
 int get_height(struct Node *);
 int get_h(struct Node *);
+int is_bst(struct Node *);
 struct Node *simple_rm(struct Node *, int);
 struct Node *successor_node(struct Node *, int);
 int successor(struct Node *, int);
@@ -36,10 +37,13 @@ void print_lvlorder(struct Node *);
 
 int main(void)
 {
-    struct Node *bst, *avl;
+    struct Node *tree, *bst, *avl;
     int vals[] = { 10, 20, 40, 30, 50, 60, 80, 70, 90, 100};
     int i, n;
 
+    tree = newnode(i = 65);
+    tree->left = newnode(80);
+    assert(is_bst(tree) == 0);
     bst = newnode(i = 65);
     assert(bst->val == i);
     assert(get_min_node(bst) == bst);
@@ -68,6 +72,7 @@ int main(void)
     assert(predecessor(bst, 30) == 20);
     assert(predecessor(bst, 20) == -1);
     assert(predecessor(bst, 10) == -1);
+    assert(is_bst(bst) == 1);
     assert(is_avl(bst) == 0);
     print_inorder(bst);
     printf("\n");
@@ -81,6 +86,7 @@ int main(void)
     print_lvlorder(avl);
     printf("\n");
     assert(get_height(avl) == 3);
+    assert(is_bst(avl) == 1);
     assert(is_avl(avl) == 1);
     return 0;
 }
@@ -201,6 +207,21 @@ int get_height(struct Node *root)
 int get_h(struct Node *root)
 { 
     return (root == NULL) ? -1 : root->h;
+}
+
+int is_bst(struct Node *root)
+{
+    enum boolean { FALSE, TRUE };
+
+    if (root == NULL)
+        return TRUE;
+    if (root->left != NULL && root->left->val > root->val)
+        return FALSE;
+    if (root->right != NULL && root->right->val < root->val)
+        return FALSE;
+    if (!is_bst(root->left) || !is_bst(root->right))
+        return FALSE;
+    return TRUE;
 }
 
 void update_heights(struct Node *root)
