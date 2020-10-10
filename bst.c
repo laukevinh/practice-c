@@ -32,6 +32,7 @@ struct Node *leftrot(struct Node *);
 struct Node *rightrot(struct Node *);
 struct Node *insert(struct Node *, int);
 int is_avl(struct Node *);
+void print_lvlorder(struct Node *);
 
 int main(void)
 {
@@ -70,9 +71,16 @@ int main(void)
     assert(is_avl(bst) == 0);
     print_inorder(bst);
     printf("\n");
+    print_lvlorder(bst);
+    printf("\n");
     avl = newnode(65);
     for (i = 0; i < n; i++)
-        insert(avl, vals[i]);
+        avl = insert(avl, vals[i]);
+    print_inorder(avl);
+    printf("\n");
+    print_lvlorder(avl);
+    printf("\n");
+    assert(get_height(avl) == 3);
     assert(is_avl(avl) == 1);
     return 0;
 }
@@ -379,10 +387,10 @@ struct Node *insert(struct Node *root, int val)
     if (root == NULL)
         return newnode(val);
     if (val < root->val) {
-        root->left = simple_insert(root->left, val);
+        root->left = insert(root->left, val);
         root->left->parent = root;
     } else {
-        root->right = simple_insert(root->right, val);
+        root->right = insert(root->right, val);
         root->right->parent = root;
     }
     root->h = 1 + max(get_h(root->left), get_h(root->right));
@@ -424,4 +432,79 @@ int is_avl(struct Node *root)
             return FALSE;
     }
     return TRUE;
+}
+
+struct QueueNode {
+    struct Node *node;
+    struct QueueNode *next;
+};
+
+struct Queue {
+    struct QueueNode *head;
+    struct QueueNode *tail;
+};
+
+struct Queue *enqueue(struct Queue *, struct Node *);
+struct Node *dequeue(struct Queue *);
+int empty(struct Queue *);
+
+void print_lvlorder(struct Node *root)
+{
+    struct Node *node;
+    struct Queue queue = { NULL, NULL };
+    struct Queue *q = &queue;
+
+    enqueue(q, root);
+    while (!empty(q)) {
+        node = dequeue(q);
+        printf("%d ", node->val);
+        if (node->left != NULL)
+            enqueue(q, node->left);
+        if (node->right != NULL)
+            enqueue(q, node->right);
+    }
+}
+
+struct QueueNode *newqnode(struct Node *node)
+{
+    struct QueueNode *qnode;
+
+    qnode = (struct QueueNode *) malloc(sizeof(struct QueueNode));
+    qnode->node = node;
+    qnode->next = NULL;
+    return qnode;
+}
+
+struct Queue *enqueue(struct Queue *q, struct Node *node)
+{
+    if (q == NULL)
+        return NULL;
+    if (q->tail == NULL)
+        q->head = q->tail = newqnode(node);
+    else {
+        q->tail->next = newqnode(node);
+        q->tail = q->tail->next;
+    }
+    return q;
+}
+
+struct Node *dequeue(struct Queue *q)
+{
+    struct Node *node;
+    struct QueueNode *qnode;
+
+    if (q == NULL || q->head == NULL)
+        return NULL;
+    node = q->head->node;
+    qnode = q->head->next;
+    free(q->head);
+    q->head = qnode;
+    if (qnode == NULL)
+        q->tail = q->head;
+    return node;
+}
+
+int empty(struct Queue *q)
+{
+    return (q == NULL || q->head == NULL);
 }
