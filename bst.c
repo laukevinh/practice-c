@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <assert.h>
 
+#define max(A, B) (((A) > (B)) ? (A) : (B))
+
 struct Node {
     int val;
     int h;
@@ -20,16 +22,21 @@ int in_tree(struct Node *, int);
 void print_inorder(struct Node *);
 int get_node_count(struct Node *);
 int get_height(struct Node *);
+int get_h(struct Node *);
 struct Node *simple_rm(struct Node *, int);
 struct Node *successor_node(struct Node *, int);
 int successor(struct Node *, int);
 struct Node *predecessor_node(struct Node *, int);
 int predecessor(struct Node *, int);
+struct Node *leftrot(struct Node *);
+struct Node *rightrot(struct Node *);
+struct Node *insert(struct Node *, int);
+int is_avl(struct Node *);
 
 int main(void)
 {
-    struct Node *root;
-    int vals[] = { 10, 20, 30, 40, 50, 60, 70, 80, 90, 100};
+    struct Node *root, *avl;
+    int vals[] = { 10, 20, 40, 30, 50, 60, 80, 70, 90, 100};
     int i, n;
 
     root = newnode(i = 65);
@@ -38,10 +45,12 @@ int main(void)
     n = sizeof(vals) / sizeof(vals[0]);
     for (i = 0; i < n; i++)
         simple_insert(root, vals[i]);
+    assert(is_avl(root) == 0);
     assert(get_min(root) == vals[0]);
     assert(get_max(root) == vals[n-1]);
     assert(get_node_count(root) == n + 1);
-    assert(get_height(root) == 6);
+    assert(get_height(root) == 5);
+    assert(get_h(root) == 5);
     print_inorder(root);
     printf("\n");
     simple_rm(root, 100);
@@ -58,6 +67,10 @@ int main(void)
     assert(predecessor(root, 10) == -1);
     print_inorder(root);
     printf("\n");
+    avl = newnode(65);
+    for (i = 0; i < n; i++)
+        insert(root, vals[i]);
+    assert(is_avl(avl) == 1);
     return 0;
 }
 
@@ -83,6 +96,7 @@ struct Node *simple_insert(struct Node *root, int val)
         root->right = simple_insert(root->right, val);
         root->right->parent = root;
     }
+    root->h = 1 + max(get_h(root->left), get_h(root->right));
     return root;
 }
 
@@ -159,6 +173,7 @@ int get_node_count(struct Node *root)
     return i;
 }
 
+/* get_height: calculates height of Node */
 int get_height(struct Node *root)
 {
     int lefth, righth, maxh;
@@ -169,6 +184,12 @@ int get_height(struct Node *root)
     righth = get_height(root->right);
     maxh = (lefth > righth) ? lefth : righth;
     return maxh + 1;
+}
+
+/* get_h: returns height field of Node */
+int get_h(struct Node *root)
+{ 
+    return (root == NULL) ? -1 : root->h;
 }
 
 struct Node *simple_rm(struct Node *root, int val)
@@ -276,4 +297,104 @@ int predecessor(struct Node *root, int val)
     struct Node *node;
 
     return (node = predecessor_node(root, val)) ? node->val : -1;
+}
+
+struct Node *leftrot(struct Node *root)
+{
+    struct Node *pivot, *parent;
+
+    if (root == NULL || (pivot = root->right) == NULL)
+        return NULL;
+    parent = root->parent;
+    pivot->parent = parent;
+    if (parent != NULL) {
+        if (parent->left == root)
+            parent->left = pivot;
+        else
+            parent->right = pivot;
+    }
+    root->parent = pivot;
+    root->right = pivot->left;
+    if (root->right != NULL)
+        root->right->parent = root;
+    pivot->left = root;
+    root->h = 1 + max(get_h(root->left), get_h(root->right));
+    pivot->h = 1 + max(get_h(pivot->left), get_h(pivot->right));
+    return pivot;
+}
+
+struct Node *rightrot(struct Node *root)
+{
+    struct Node *pivot, *parent;
+
+    if (root == NULL || (pivot = root->left) == NULL)
+        return NULL;
+    parent = root->parent;
+    pivot->parent = parent;
+    if (parent != NULL) {
+        if (parent->left == root)
+            parent->left = pivot;
+        else
+            parent->right = pivot;
+    }
+    root->parent = pivot;
+    root->left = pivot->right;
+    if (root->left != NULL)
+        root->left->parent = root;
+    pivot->right = root;
+    root->h = 1 + max(get_h(root->left), get_h(root->right));
+    pivot->h = 1 + max(get_h(pivot->left), get_h(pivot->right));
+    return pivot;
+}
+
+struct Node *insert(struct Node *root, int val)
+{
+    if (root == NULL)
+        return newnode(val);
+    if (val < root->val) {
+        root->left = simple_insert(root->left, val);
+        root->left->parent = root;
+    } else {
+        root->right = simple_insert(root->right, val);
+        root->right->parent = root;
+    }
+    root->h = 1 + max(get_h(root->left), get_h(root->right));
+    if (get_h(root) - get_h(root->left) > 2) {
+        if (get_h(root->right->right) >= get_h(root->right->left))
+            return leftrot(root);
+        else {
+            root->right = rightrot(root->right);
+            return leftrot(root);
+        }
+    } else if (get_h(root) - get_h(root->right) > 2) {
+        if (get_h(root->left->left) >= get_h(root->left->right))
+            return rightrot(root);
+        else {
+            root->left = leftrot(root->left);
+            return rightrot(root);
+        }
+    }
+    return root;
+}
+
+int balanced(struct Node *root)
+{
+    int diff;
+
+    diff = get_h(root->left) - get_h(root->right);
+    diff *= (diff < 0) ? -1 : 1;
+    return (diff <= 1);
+}
+
+int is_avl(struct Node *root)
+{
+    enum boolean { FALSE, TRUE };
+
+    if (root != NULL) {
+        if (!balanced(root)
+            || !is_avl(root->left)
+            || !is_avl(root->right))
+        return FALSE;
+    }
+    return TRUE;
 }
