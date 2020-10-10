@@ -35,41 +35,44 @@ int is_avl(struct Node *);
 
 int main(void)
 {
-    struct Node *root, *avl;
+    struct Node *bst, *avl;
     int vals[] = { 10, 20, 40, 30, 50, 60, 80, 70, 90, 100};
     int i, n;
 
-    root = newnode(i = 65);
-    assert(root->val == i);
-    assert(get_min_node(root) == root);
+    bst = newnode(i = 65);
+    assert(bst->val == i);
+    assert(get_min_node(bst) == bst);
     n = sizeof(vals) / sizeof(vals[0]);
     for (i = 0; i < n; i++)
-        simple_insert(root, vals[i]);
-    assert(is_avl(root) == 0);
-    assert(get_min(root) == vals[0]);
-    assert(get_max(root) == vals[n-1]);
-    assert(get_node_count(root) == n + 1);
-    assert(get_height(root) == 5);
-    assert(get_h(root) == 5);
-    print_inorder(root);
+        simple_insert(bst, vals[i]);
+    assert(is_avl(bst) == 0);
+    assert(get_min(bst) == vals[0]);
+    assert(get_max(bst) == vals[n-1]);
+    assert(get_node_count(bst) == n + 1);
+    assert(get_height(bst) == 5);
+    assert(get_h(bst) == 5);
+    print_inorder(bst);
     printf("\n");
-    simple_rm(root, 100);
-    simple_rm(root, 10);
-    assert(in_tree(root, 10) == 0);
-    assert(in_tree(root, 80) == 1);
-    assert(successor(root, 60) == 65);
-    assert(successor(root, 20) == 30);
-    assert(successor(root, 90) == -1);
-    assert(successor(root, 10) == -1);
-    assert(predecessor(root, 65) == 60);
-    assert(predecessor(root, 30) == 20);
-    assert(predecessor(root, 20) == -1);
-    assert(predecessor(root, 10) == -1);
-    print_inorder(root);
+    simple_rm(bst, 100);
+    simple_rm(bst, 10);
+    assert(get_height(bst) == 4);
+    assert(get_h(bst) == 4);
+    assert(in_tree(bst, 10) == 0);
+    assert(in_tree(bst, 80) == 1);
+    assert(successor(bst, 60) == 65);
+    assert(successor(bst, 20) == 30);
+    assert(successor(bst, 90) == -1);
+    assert(successor(bst, 10) == -1);
+    assert(predecessor(bst, 65) == 60);
+    assert(predecessor(bst, 30) == 20);
+    assert(predecessor(bst, 20) == -1);
+    assert(predecessor(bst, 10) == -1);
+    assert(is_avl(bst) == 0);
+    print_inorder(bst);
     printf("\n");
     avl = newnode(65);
     for (i = 0; i < n; i++)
-        insert(root, vals[i]);
+        insert(avl, vals[i]);
     assert(is_avl(avl) == 1);
     return 0;
 }
@@ -192,32 +195,55 @@ int get_h(struct Node *root)
     return (root == NULL) ? -1 : root->h;
 }
 
+void update_heights(struct Node *root)
+{
+    for ( ; root != NULL ; root = root->parent)
+        root->h = 1 + max(get_h(root->left), get_h(root->right));
+}
+
+/* repl_child: replaces parent's child from a to b */
+void repl_child
+(struct Node *parent, struct Node *a, struct Node *b)
+{
+    if (parent->left == a)
+        parent->left = b;
+    else if (parent->right == a)
+        parent->right = b;
+}
+
 struct Node *simple_rm(struct Node *root, int val)
 {
     struct Node *node;
+    struct Node *marker; /* marks where to start update height */
 
     if (root == NULL)
         return NULL;
     else if (val < root->val)
-        root->left = simple_rm(root->left, val);
+        simple_rm(root->left, val);
     else if (val > root->val)
-        root->right = simple_rm(root->right, val);
+        simple_rm(root->right, val);
     else {  /* val == root->val */
         if (root->right == NULL) {  /* covers leaf case too */
+            marker = root->parent;
             if ((node = root->left) != NULL)
                 node->parent = root->parent;
+            repl_child(root->parent, root, node);
         } else {
             node = get_min_node(root->right);
             if (node == root->right) {
+                marker = node;
                 node->parent = root->parent;
+                repl_child(root->parent, root, node);
                 node->left = root->left;
                 if (root->left != NULL)
                     root->left->parent = node;
             } else {
+                marker = node->parent; /* update height from here */
                 node->parent->left = node->right;
                 if (node->right != NULL)
                     node->right->parent = node->parent;
                 node->parent = root->parent;
+                repl_child(root->parent, root, node);
                 node->left = root->left;
                 if (root->left != NULL)
                     root->left->parent = node;
@@ -226,6 +252,7 @@ struct Node *simple_rm(struct Node *root, int val)
                     root->right->parent = node;
             }
         }
+        update_heights(marker);
         free(root);
         return node;
     }
@@ -392,9 +419,9 @@ int is_avl(struct Node *root)
 
     if (root != NULL) {
         if (!balanced(root)
-            || !is_avl(root->left)
-            || !is_avl(root->right))
-        return FALSE;
+                || !is_avl(root->left)
+                || !is_avl(root->right))
+            return FALSE;
     }
     return TRUE;
 }
