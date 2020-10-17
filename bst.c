@@ -2,12 +2,11 @@
 #include <stdlib.h>
 #include <assert.h>
 
-#define max(A, B) (((A) > (B)) ? (A) : (B))
+#define max(A, B) ((A) > (B) ? (A) : (B))
 
 struct Node {
     int val;
     int h;
-    struct Node *parent;
     struct Node *left;
     struct Node *right;
 };
@@ -32,6 +31,7 @@ int predecessor(struct Node *, int);
 struct Node *leftrot(struct Node *);
 struct Node *rightrot(struct Node *);
 struct Node *insert(struct Node *, int);
+struct Node *del(struct Node *, int);
 int is_avl(struct Node *);
 void print_lvlorder(struct Node *);
 
@@ -58,10 +58,8 @@ int main(void)
     assert(get_h(bst) == 5);
     print_inorder(bst);
     printf("\n");
-    simple_rm(bst, 100);
-    simple_rm(bst, 10);
-    assert(get_height(bst) == 4);
-    assert(get_h(bst) == 4);
+    bst = simple_rm(bst, 100);
+    bst = simple_rm(bst, 10);
     assert(in_tree(bst, 10) == 0);
     assert(in_tree(bst, 80) == 1);
     assert(successor(bst, 60) == 65);
@@ -98,7 +96,7 @@ struct Node *newnode(int val)
     node = (struct Node *) malloc(sizeof(struct Node));
     node->val = val;
     node->h = 0;
-    node->parent = node->left = node->right = NULL;
+    node->left = node->right = NULL;
     return node;
 }
 
@@ -108,10 +106,8 @@ struct Node *simple_insert(struct Node *root, int val)
         return newnode(val);
     if (val < root->val) {
         root->left = simple_insert(root->left, val);
-        root->left->parent = root;
     } else {
         root->right = simple_insert(root->right, val);
-        root->right->parent = root;
     }
     root->h = 1 + max(get_h(root->left), get_h(root->right));
     return root;
@@ -224,10 +220,9 @@ int is_bst(struct Node *root)
     return TRUE;
 }
 
-void update_heights(struct Node *root)
+void update_height(struct Node *root)
 {
-    for ( ; root != NULL ; root = root->parent)
-        root->h = 1 + max(get_h(root->left), get_h(root->right));
+    root->h = 1 + max(get_h(root->left), get_h(root->right));
 }
 
 /* repl_child: replaces parent's child from a to b */
@@ -242,51 +237,9 @@ void repl_child
 
 struct Node *simple_rm(struct Node *root, int val)
 {
-    struct Node *node;
-    struct Node *marker; /* marks where to start update height */
-
-    if (root == NULL)
-        return NULL;
-    else if (val < root->val)
-        simple_rm(root->left, val);
-    else if (val > root->val)
-        simple_rm(root->right, val);
-    else {  /* val == root->val */
-        if (root->right == NULL) {  /* covers leaf case too */
-            marker = root->parent;
-            if ((node = root->left) != NULL)
-                node->parent = root->parent;
-            repl_child(root->parent, root, node);
-        } else {
-            node = get_min_node(root->right);
-            if (node == root->right) {
-                marker = node;
-                node->parent = root->parent;
-                repl_child(root->parent, root, node);
-                node->left = root->left;
-                if (root->left != NULL)
-                    root->left->parent = node;
-            } else {
-                marker = node->parent; /* update height from here */
-                node->parent->left = node->right;
-                if (node->right != NULL)
-                    node->right->parent = node->parent;
-                node->parent = root->parent;
-                repl_child(root->parent, root, node);
-                node->left = root->left;
-                if (root->left != NULL)
-                    root->left->parent = node;
-                node->right = root->right;
-                if (root->right != NULL)
-                    root->right->parent = node;
-            }
-        }
-        update_heights(marker);
-        free(root);
-        return node;
-    }
-    return root;
+    return del(root, val);
 }
+
 
 /* successor_node:  find next larger node */
 /* psuedocode:
@@ -355,82 +308,91 @@ int predecessor(struct Node *root, int val)
     return (node = predecessor_node(root, val)) ? node->val : -1;
 }
 
-struct Node *leftrot(struct Node *root)
+int balance(struct Node *node)
 {
-    struct Node *pivot, *parent;
-
-    if (root == NULL || (pivot = root->right) == NULL)
-        return NULL;
-    parent = root->parent;
-    pivot->parent = parent;
-    if (parent != NULL) {
-        if (parent->left == root)
-            parent->left = pivot;
-        else
-            parent->right = pivot;
-    }
-    root->parent = pivot;
-    root->right = pivot->left;
-    if (root->right != NULL)
-        root->right->parent = root;
-    pivot->left = root;
-    root->h = 1 + max(get_h(root->left), get_h(root->right));
-    pivot->h = 1 + max(get_h(pivot->left), get_h(pivot->right));
-    return pivot;
+    if (node == NULL)
+        return 0;
+    return get_h(node->right) - get_h(node->left);
 }
 
-struct Node *rightrot(struct Node *root)
+struct Node *leftrot(struct Node *x)
 {
-    struct Node *pivot, *parent;
+    struct Node *y, *B;
 
-    if (root == NULL || (pivot = root->left) == NULL)
-        return NULL;
-    parent = root->parent;
-    pivot->parent = parent;
-    if (parent != NULL) {
-        if (parent->left == root)
-            parent->left = pivot;
-        else
-            parent->right = pivot;
-    }
-    root->parent = pivot;
-    root->left = pivot->right;
-    if (root->left != NULL)
-        root->left->parent = root;
-    pivot->right = root;
-    root->h = 1 + max(get_h(root->left), get_h(root->right));
-    pivot->h = 1 + max(get_h(pivot->left), get_h(pivot->right));
-    return pivot;
+    y = x->right;
+    B = y->left;
+    y->left = x;
+    x->right = B;
+    update_height(x);
+    update_height(y);
+    return y;
+}
+
+struct Node *rightrot(struct Node *y)
+{
+    struct Node *x, *B;
+
+    x = y->left;
+    B = x->right;
+    x->right = y;
+    y->left = B;
+    update_height(y);
+    update_height(x);
+    return x;
 }
 
 struct Node *insert(struct Node *root, int val)
 {
     if (root == NULL)
         return newnode(val);
-    if (val < root->val) {
+    if (val < root->val)
         root->left = insert(root->left, val);
-        root->left->parent = root;
-    } else {
+    else
         root->right = insert(root->right, val);
-        root->right->parent = root;
-    }
-    root->h = 1 + max(get_h(root->left), get_h(root->right));
-    if (get_h(root) - get_h(root->left) > 2) {
-        if (get_h(root->right->right) >= get_h(root->right->left))
-            return leftrot(root);
-        else {
+    update_height(root);
+    if (balance(root) > 1) {
+        if (balance(root->right) < -1)
             root->right = rightrot(root->right);
-            return leftrot(root);
-        }
-    } else if (get_h(root) - get_h(root->right) > 2) {
-        if (get_h(root->left->left) >= get_h(root->left->right))
-            return rightrot(root);
-        else {
+        root = leftrot(root);
+    } else if (balance(root) < -1) {
+        if (balance(root->left) > 1)
             root->left = leftrot(root->left);
-            return rightrot(root);
-        }
+        root = rightrot(root);
     }
     return root;
+}
+
+struct Node *del(struct Node *node, int val)
+{
+    struct Node *temp;
+
+    if (node == NULL)
+        return NULL;
+    else if (val < node->val)
+        node->left = del(node->left, val);
+    else if (val > node->val)
+        node->right = del(node->right, val);
+    else {
+        if (node->left == NULL || node->right == NULL) {
+            temp = (node->left != NULL) ? node->left : node->right;
+            free(node);
+            return temp;
+        } else {
+            node->val = get_min(node->right);
+            node->right = del(node->right, node->val);
+        }
+    }
+    update_height(node);
+    if (balance(node) > 1) {
+        if (balance(node->right) < -1)
+            node->right = rightrot(node->right);
+        node = leftrot(node);
+    } else if (balance(node) < -1) {
+        if (balance(node->left) > 1)
+            node->left = leftrot(node->left);
+        node = rightrot(node);
+    }
+    return node;
 }
 
 int balanced(struct Node *root)
