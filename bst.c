@@ -221,8 +221,7 @@ struct Node *successor_node(struct Node *root, int val)
     } else if (val > root->val)
         return successor_node(root->right, val);
     else {
-        node = get_min_node(root->right);
-        return node ? node : NULL;
+        return get_min_node(root->right);
     }
 }
 
@@ -249,8 +248,7 @@ struct Node *predecessor_node(struct Node *root, int val)
             }
         return predecessor_node(root->right, val);
     } else {
-        node = get_max_node(root->left);
-        return node ? node : NULL;
+        return get_max_node(root->left);
     }
 }
 
