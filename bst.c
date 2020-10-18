@@ -12,8 +12,6 @@ struct Node {
 };
 
 struct Node *newnode(int);
-struct Node *simple_insert(struct Node *, int);
-struct Node *get_min_node(struct Node *);
 int get_min(struct Node *);
 int get_max(struct Node *);
 struct Node *get(struct Node *, int);
@@ -23,13 +21,8 @@ int get_node_count(struct Node *);
 int get_height(struct Node *);
 int get_h(struct Node *);
 int is_bst(struct Node *);
-struct Node *simple_rm(struct Node *, int);
-struct Node *successor_node(struct Node *, int);
 int successor(struct Node *, int);
-struct Node *predecessor_node(struct Node *, int);
 int predecessor(struct Node *, int);
-struct Node *leftrot(struct Node *);
-struct Node *rightrot(struct Node *);
 struct Node *insert(struct Node *, int);
 struct Node *del(struct Node *, int);
 int is_avl(struct Node *);
@@ -44,48 +37,37 @@ int main(void)
     tree = newnode(i = 65);
     tree->left = newnode(80);
     assert(is_bst(tree) == 0);
-    bst = newnode(i = 65);
-    assert(bst->val == i);
-    assert(get_min_node(bst) == bst);
+    avl = newnode(i = 65);
+    assert(avl->val == i);
     n = sizeof(vals) / sizeof(vals[0]);
     for (i = 0; i < n; i++)
-        simple_insert(bst, vals[i]);
-    assert(is_avl(bst) == 0);
-    assert(get_min(bst) == vals[0]);
-    assert(get_max(bst) == vals[n-1]);
-    assert(get_node_count(bst) == n + 1);
-    assert(get_height(bst) == 5);
-    assert(get_h(bst) == 5);
-    print_inorder(bst);
-    printf("\n");
-    bst = simple_rm(bst, 100);
-    bst = simple_rm(bst, 10);
-    assert(in_tree(bst, 10) == 0);
-    assert(in_tree(bst, 80) == 1);
-    assert(successor(bst, 60) == 65);
-    assert(successor(bst, 20) == 30);
-    assert(successor(bst, 90) == -1);
-    assert(successor(bst, 10) == -1);
-    assert(predecessor(bst, 65) == 60);
-    assert(predecessor(bst, 30) == 20);
-    assert(predecessor(bst, 20) == -1);
-    assert(predecessor(bst, 10) == -1);
-    assert(is_bst(bst) == 1);
-    assert(is_avl(bst) == 0);
-    print_inorder(bst);
-    printf("\n");
-    print_lvlorder(bst);
-    printf("\n");
-    avl = newnode(65);
-    for (i = 0; i < n; i++)
         avl = insert(avl, vals[i]);
+    assert(is_avl(avl) == 1);
+    assert(get_min(avl) == vals[0]);
+    assert(get_max(avl) == vals[n-1]);
+    assert(get_node_count(avl) == n + 1);
+    assert(get_height(avl) == 3);
+    assert(get_h(avl) == 3);
+    print_inorder(avl);
+    printf("\n");
+    avl = del(avl, 100);
+    avl = del(avl, 10);
+    assert(in_tree(avl, 10) == 0);
+    assert(in_tree(avl, 80) == 1);
+    assert(successor(avl, 60) == 65);
+    assert(successor(avl, 20) == 30);
+    assert(successor(avl, 90) == -1);
+    assert(successor(avl, 10) == -1);
+    assert(predecessor(avl, 65) == 60);
+    assert(predecessor(avl, 30) == 20);
+    assert(predecessor(avl, 20) == -1);
+    assert(predecessor(avl, 10) == -1);
+    assert(is_bst(avl) == 1);
+    assert(is_avl(avl) == 1);
     print_inorder(avl);
     printf("\n");
     print_lvlorder(avl);
     printf("\n");
-    assert(get_height(avl) == 3);
-    assert(is_bst(avl) == 1);
-    assert(is_avl(avl) == 1);
     return 0;
 }
 
@@ -98,19 +80,6 @@ struct Node *newnode(int val)
     node->h = 0;
     node->left = node->right = NULL;
     return node;
-}
-
-struct Node *simple_insert(struct Node *root, int val)
-{
-    if (root == NULL)
-        return newnode(val);
-    if (val < root->val) {
-        root->left = simple_insert(root->left, val);
-    } else {
-        root->right = simple_insert(root->right, val);
-    }
-    root->h = 1 + max(get_h(root->left), get_h(root->right));
-    return root;
 }
 
 struct Node *get_min_node(struct Node *root)
@@ -225,22 +194,6 @@ void update_height(struct Node *root)
     root->h = 1 + max(get_h(root->left), get_h(root->right));
 }
 
-/* repl_child: replaces parent's child from a to b */
-void repl_child
-(struct Node *parent, struct Node *a, struct Node *b)
-{
-    if (parent->left == a)
-        parent->left = b;
-    else if (parent->right == a)
-        parent->right = b;
-}
-
-struct Node *simple_rm(struct Node *root, int val)
-{
-    return del(root, val);
-}
-
-
 /* successor_node:  find next larger node */
 /* psuedocode:
     once you find node containing target value
@@ -308,6 +261,7 @@ int predecessor(struct Node *root, int val)
     return (node = predecessor_node(root, val)) ? node->val : -1;
 }
 
+/* balance: returns left vs right child height */
 int balance(struct Node *node)
 {
     if (node == NULL)
@@ -315,6 +269,21 @@ int balance(struct Node *node)
     return get_h(node->right) - get_h(node->left);
 }
 
+/* Rotations:
+    A, B and C are subtrees of the tree rooted with
+    y (on the left side) or x (on the right side)
+
+        y                               x
+       / \     Right Rotation          / \
+      x   C    - - - - - - - >        A   y 
+     / \       < - - - - - - -           / \
+    A   B      Left Rotation            B   C
+    
+    Keys in both trees follow the this order
+    keys(A) < key(x) < keys(B) < key(y) < keys(C)
+    So BST property is not violated anywhere. */
+
+/* leftrot: see diagram above. LR(x) returns y. */
 struct Node *leftrot(struct Node *x)
 {
     struct Node *y, *B;
@@ -328,6 +297,7 @@ struct Node *leftrot(struct Node *x)
     return y;
 }
 
+/* rightrot: see diagram above. RR(y) returns x. */
 struct Node *rightrot(struct Node *y)
 {
     struct Node *x, *B;
@@ -341,20 +311,49 @@ struct Node *rightrot(struct Node *y)
     return x;
 }
 
+/* Insertions: 
+    Perform normal BST insert, then update height because
+    children height might have changed. Check if AVL 
+    property is violated (i.e. height of left vs right child
+    not within 1) and fix via rotations. There are 4 cases. 
+    
+    1.) Right-right case
+        x                            y
+       / \                         /   \ 
+      A   y     LeftRotate(y)     x     z
+         / \    - - - - - - >    / \   / \
+        B   z                   A   B C   D
+           / \
+          C   D 
+    
+    2.) Right-left case
+        x                         x                           y
+       / \                       / \                        /   \ 
+      A   z   RightRotate(z)    A   y     LeftRotate(y)    x     z
+         / \  - - - - - - ->       / \    - - - - - - >   / \   / \
+        y   D                     B   z                  A   B C   D
+       / \                           / \
+      B   C                         C   D                         
+    
+    3.) Left-left case is mirror above.
+    4.) Left-right case is mirror above. */
+
+/* insert: perform normal BST insert, then fix AVL
+    property if violated. Explanation above. */
 struct Node *insert(struct Node *root, int val)
 {
     if (root == NULL)
         return newnode(val);
     if (val < root->val)
         root->left = insert(root->left, val);
-    else
+    else                                /* val >= root->val */
         root->right = insert(root->right, val);
-    update_height(root);
-    if (balance(root) > 1) {
-        if (balance(root->right) < -1)
+    update_height(root);                /* children heights might have changed */
+    if (balance(root) > 1) {            /* if right heavy */
+        if (balance(root->right) < -1)  /* fix right-left to right-right case */
             root->right = rightrot(root->right);
-        root = leftrot(root);
-    } else if (balance(root) < -1) {
+        root = leftrot(root);           /* fix right-right case */
+    } else if (balance(root) < -1) {    /* mirror version of above */
         if (balance(root->left) > 1)
             root->left = leftrot(root->left);
         root = rightrot(root);
@@ -362,6 +361,8 @@ struct Node *insert(struct Node *root, int val)
     return root;
 }
 
+/* del: don't need parent pointer because recursive implementation 
+    updates from bottom up, so ancestors get latest info. */
 struct Node *del(struct Node *node, int val)
 {
     struct Node *temp;
@@ -372,17 +373,17 @@ struct Node *del(struct Node *node, int val)
         node->left = del(node->left, val);
     else if (val > node->val)
         node->right = del(node->right, val);
-    else {
-        if (node->left == NULL || node->right == NULL) {
-            temp = (node->left != NULL) ? node->left : node->right;
+    else {  /* target val found */
+        if (node->left == NULL || node->right == NULL) { /* leaf or single child */
+            temp = node->left ? node->left : node->right;
             free(node);
-            return temp;
-        } else {
+            return temp;    /* return single child or NULL */
+        } else {            /* 2 children, get successor */
             node->val = get_min(node->right);
             node->right = del(node->right, node->val);
         }
     }
-    update_height(node);
+    update_height(node);    /* same logic as last half of insert */
     if (balance(node) > 1) {
         if (balance(node->right) < -1)
             node->right = rightrot(node->right);
