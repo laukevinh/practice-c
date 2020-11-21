@@ -2,16 +2,19 @@
 #include <stdlib.h>
 #include <assert.h>
 
-#define max(A, B) ((A) > (B) ? (A) : (B))
+#define max(A, B) (((A) > (B)) ? (A) : (B))
 
 struct Node {
     int val;
     int h;
+    struct Node *parent;
     struct Node *left;
     struct Node *right;
 };
 
 struct Node *newnode(int);
+struct Node *simple_insert(struct Node *, int);
+struct Node *get_min_node(struct Node *);
 int get_min(struct Node *);
 int get_max(struct Node *);
 struct Node *get(struct Node *, int);
@@ -21,10 +24,14 @@ int get_node_count(struct Node *);
 int get_height(struct Node *);
 int get_h(struct Node *);
 int is_bst(struct Node *);
+struct Node *simple_rm(struct Node *, int);
+struct Node *successor_node(struct Node *, int);
 int successor(struct Node *, int);
+struct Node *predecessor_node(struct Node *, int);
 int predecessor(struct Node *, int);
+struct Node *leftrot(struct Node *);
+struct Node *rightrot(struct Node *);
 struct Node *insert(struct Node *, int);
-struct Node *del(struct Node *, int);
 int is_avl(struct Node *);
 void print_lvlorder(struct Node *);
 
@@ -37,37 +44,50 @@ int main(void)
     tree = newnode(i = 65);
     tree->left = newnode(80);
     assert(is_bst(tree) == 0);
-    avl = newnode(i = 65);
-    assert(avl->val == i);
+    bst = newnode(i = 65);
+    assert(bst->val == i);
+    assert(get_min_node(bst) == bst);
     n = sizeof(vals) / sizeof(vals[0]);
     for (i = 0; i < n; i++)
-        avl = insert(avl, vals[i]);
-    assert(is_avl(avl) == 1);
-    assert(get_min(avl) == vals[0]);
-    assert(get_max(avl) == vals[n-1]);
-    assert(get_node_count(avl) == n + 1);
-    assert(get_height(avl) == 3);
-    assert(get_h(avl) == 3);
-    print_inorder(avl);
+        simple_insert(bst, vals[i]);
+    assert(is_avl(bst) == 0);
+    assert(get_min(bst) == vals[0]);
+    assert(get_max(bst) == vals[n-1]);
+    assert(get_node_count(bst) == n + 1);
+    assert(get_height(bst) == 5);
+    assert(get_h(bst) == 5);
+    print_inorder(bst);
     printf("\n");
-    avl = del(avl, 100);
-    avl = del(avl, 10);
-    assert(in_tree(avl, 10) == 0);
-    assert(in_tree(avl, 80) == 1);
-    assert(successor(avl, 60) == 65);
-    assert(successor(avl, 20) == 30);
-    assert(successor(avl, 90) == -1);
-    assert(successor(avl, 10) == -1);
-    assert(predecessor(avl, 65) == 60);
-    assert(predecessor(avl, 30) == 20);
-    assert(predecessor(avl, 20) == -1);
-    assert(predecessor(avl, 10) == -1);
-    assert(is_bst(avl) == 1);
-    assert(is_avl(avl) == 1);
+    simple_rm(bst, 100);
+    simple_rm(bst, 10);
+    assert(get_height(bst) == 4);
+    assert(get_h(bst) == 4);
+    assert(in_tree(bst, 10) == 0);
+    assert(in_tree(bst, 80) == 1);
+    assert(successor(bst, 60) == 65);
+    assert(successor(bst, 20) == 30);
+    assert(successor(bst, 90) == -1);
+    assert(successor(bst, 10) == -1);
+    assert(predecessor(bst, 65) == 60);
+    assert(predecessor(bst, 30) == 20);
+    assert(predecessor(bst, 20) == -1);
+    assert(predecessor(bst, 10) == -1);
+    assert(is_bst(bst) == 1);
+    assert(is_avl(bst) == 0);
+    print_inorder(bst);
+    printf("\n");
+    print_lvlorder(bst);
+    printf("\n");
+    avl = newnode(65);
+    for (i = 0; i < n; i++)
+        avl = insert(avl, vals[i]);
     print_inorder(avl);
     printf("\n");
     print_lvlorder(avl);
     printf("\n");
+    assert(get_height(avl) == 3);
+    assert(is_bst(avl) == 1);
+    assert(is_avl(avl) == 1);
     return 0;
 }
 
@@ -78,8 +98,23 @@ struct Node *newnode(int val)
     node = (struct Node *) malloc(sizeof(struct Node));
     node->val = val;
     node->h = 0;
-    node->left = node->right = NULL;
+    node->parent = node->left = node->right = NULL;
     return node;
+}
+
+struct Node *simple_insert(struct Node *root, int val)
+{
+    if (root == NULL)
+        return newnode(val);
+    if (val < root->val) {
+        root->left = simple_insert(root->left, val);
+        root->left->parent = root;
+    } else {
+        root->right = simple_insert(root->right, val);
+        root->right->parent = root;
+    }
+    root->h = 1 + max(get_h(root->left), get_h(root->right));
+    return root;
 }
 
 struct Node *get_min_node(struct Node *root)
@@ -189,9 +224,68 @@ int is_bst(struct Node *root)
     return TRUE;
 }
 
-void update_height(struct Node *root)
+void update_heights(struct Node *root)
 {
-    root->h = 1 + max(get_h(root->left), get_h(root->right));
+    for ( ; root != NULL ; root = root->parent)
+        root->h = 1 + max(get_h(root->left), get_h(root->right));
+}
+
+/* repl_child: replaces parent's child from a to b */
+void repl_child
+(struct Node *parent, struct Node *a, struct Node *b)
+{
+    if (parent->left == a)
+        parent->left = b;
+    else if (parent->right == a)
+        parent->right = b;
+}
+
+struct Node *simple_rm(struct Node *root, int val)
+{
+    struct Node *node;
+    struct Node *marker; /* marks where to start update height */
+
+    if (root == NULL)
+        return NULL;
+    else if (val < root->val)
+        simple_rm(root->left, val);
+    else if (val > root->val)
+        simple_rm(root->right, val);
+    else {  /* val == root->val */
+        if (root->right == NULL) {  /* covers leaf case too */
+            marker = root->parent;
+            if ((node = root->left) != NULL)
+                node->parent = root->parent;
+            repl_child(root->parent, root, node);
+        } else {
+            node = get_min_node(root->right);
+            if (node == root->right) {
+                marker = node;
+                node->parent = root->parent;
+                repl_child(root->parent, root, node);
+                node->left = root->left;
+                if (root->left != NULL)
+                    root->left->parent = node;
+            } else {
+                marker = node->parent; /* update height from here */
+                node->parent->left = node->right;
+                if (node->right != NULL)
+                    node->right->parent = node->parent;
+                node->parent = root->parent;
+                repl_child(root->parent, root, node);
+                node->left = root->left;
+                if (root->left != NULL)
+                    root->left->parent = node;
+                node->right = root->right;
+                if (root->right != NULL)
+                    root->right->parent = node;
+            }
+        }
+        update_heights(marker);
+        free(root);
+        return node;
+    }
+    return root;
 }
 
 /* successor_node:  find next larger node */
@@ -221,7 +315,8 @@ struct Node *successor_node(struct Node *root, int val)
     } else if (val > root->val)
         return successor_node(root->right, val);
     else {
-        return get_min_node(root->right);
+        node = get_min_node(root->right);
+        return node ? node : NULL;
     }
 }
 
@@ -248,7 +343,8 @@ struct Node *predecessor_node(struct Node *root, int val)
             }
         return predecessor_node(root->right, val);
     } else {
-        return get_max_node(root->left);
+        node = get_max_node(root->left);
+        return node ? node : NULL;
     }
 }
 
@@ -259,139 +355,82 @@ int predecessor(struct Node *root, int val)
     return (node = predecessor_node(root, val)) ? node->val : -1;
 }
 
-/* balance: returns left vs right child height */
-int balance(struct Node *node)
+struct Node *leftrot(struct Node *root)
 {
-    if (node == NULL)
-        return 0;
-    return get_h(node->right) - get_h(node->left);
+    struct Node *pivot, *parent;
+
+    if (root == NULL || (pivot = root->right) == NULL)
+        return NULL;
+    parent = root->parent;
+    pivot->parent = parent;
+    if (parent != NULL) {
+        if (parent->left == root)
+            parent->left = pivot;
+        else
+            parent->right = pivot;
+    }
+    root->parent = pivot;
+    root->right = pivot->left;
+    if (root->right != NULL)
+        root->right->parent = root;
+    pivot->left = root;
+    root->h = 1 + max(get_h(root->left), get_h(root->right));
+    pivot->h = 1 + max(get_h(pivot->left), get_h(pivot->right));
+    return pivot;
 }
 
-/* Rotations:
-    A, B and C are subtrees of the tree rooted with
-    y (on the left side) or x (on the right side)
-
-        y                               x
-       / \     Right Rotation          / \
-      x   C    - - - - - - - >        A   y 
-     / \       < - - - - - - -           / \
-    A   B      Left Rotation            B   C
-    
-    Keys in both trees follow the this order
-    keys(A) < key(x) < keys(B) < key(y) < keys(C)
-    So BST property is not violated anywhere. */
-
-/* leftrot: see diagram above. LR(x) returns y. */
-struct Node *leftrot(struct Node *x)
+struct Node *rightrot(struct Node *root)
 {
-    struct Node *y, *B;
+    struct Node *pivot, *parent;
 
-    y = x->right;
-    B = y->left;
-    y->left = x;
-    x->right = B;
-    update_height(x);
-    update_height(y);
-    return y;
+    if (root == NULL || (pivot = root->left) == NULL)
+        return NULL;
+    parent = root->parent;
+    pivot->parent = parent;
+    if (parent != NULL) {
+        if (parent->left == root)
+            parent->left = pivot;
+        else
+            parent->right = pivot;
+    }
+    root->parent = pivot;
+    root->left = pivot->right;
+    if (root->left != NULL)
+        root->left->parent = root;
+    pivot->right = root;
+    root->h = 1 + max(get_h(root->left), get_h(root->right));
+    pivot->h = 1 + max(get_h(pivot->left), get_h(pivot->right));
+    return pivot;
 }
 
-/* rightrot: see diagram above. RR(y) returns x. */
-struct Node *rightrot(struct Node *y)
-{
-    struct Node *x, *B;
-
-    x = y->left;
-    B = x->right;
-    x->right = y;
-    y->left = B;
-    update_height(y);
-    update_height(x);
-    return x;
-}
-
-/* Insertions: 
-    Perform normal BST insert, then update height because
-    children height might have changed. Check if AVL 
-    property is violated (i.e. height of left vs right child
-    not within 1) and fix via rotations. There are 4 cases. 
-    
-    1.) Right-right case
-        x                            y
-       / \                         /   \ 
-      A   y     LeftRotate(y)     x     z
-         / \    - - - - - - >    / \   / \
-        B   z                   A   B C   D
-           / \
-          C   D 
-    
-    2.) Right-left case
-        x                         x                           y
-       / \                       / \                        /   \ 
-      A   z   RightRotate(z)    A   y     LeftRotate(y)    x     z
-         / \  - - - - - - ->       / \    - - - - - - >   / \   / \
-        y   D                     B   z                  A   B C   D
-       / \                           / \
-      B   C                         C   D                         
-    
-    3.) Left-left case is mirror above.
-    4.) Left-right case is mirror above. */
-
-/* insert: perform normal BST insert, then fix AVL
-    property if violated. Explanation above. */
 struct Node *insert(struct Node *root, int val)
 {
     if (root == NULL)
         return newnode(val);
-    if (val < root->val)
+    if (val < root->val) {
         root->left = insert(root->left, val);
-    else                                /* val >= root->val */
+        root->left->parent = root;
+    } else {
         root->right = insert(root->right, val);
-    update_height(root);                /* children heights might have changed */
-    if (balance(root) > 1) {            /* if right heavy */
-        if (balance(root->right) < -1)  /* fix right-left to right-right case */
-            root->right = rightrot(root->right);
-        root = leftrot(root);           /* fix right-right case */
-    } else if (balance(root) < -1) {    /* mirror version of above */
-        if (balance(root->left) > 1)
-            root->left = leftrot(root->left);
-        root = rightrot(root);
+        root->right->parent = root;
     }
-    return root;
-}
-
-/* del: don't need parent pointer because recursive implementation 
-    updates from bottom up, so ancestors get latest info. */
-struct Node *del(struct Node *node, int val)
-{
-    struct Node *temp;
-
-    if (node == NULL)
-        return NULL;
-    else if (val < node->val)
-        node->left = del(node->left, val);
-    else if (val > node->val)
-        node->right = del(node->right, val);
-    else {  /* target val found */
-        if (node->left == NULL || node->right == NULL) { /* leaf or single child */
-            temp = node->left ? node->left : node->right;
-            free(node);
-            return temp;    /* return single child or NULL */
-        } else {            /* 2 children, get successor */
-            node->val = get_min(node->right);
-            node->right = del(node->right, node->val);
+    root->h = 1 + max(get_h(root->left), get_h(root->right));
+    if (get_h(root) - get_h(root->left) > 2) {
+        if (get_h(root->right->right) >= get_h(root->right->left))
+            return leftrot(root);
+        else {
+            root->right = rightrot(root->right);
+            return leftrot(root);
+        }
+    } else if (get_h(root) - get_h(root->right) > 2) {
+        if (get_h(root->left->left) >= get_h(root->left->right))
+            return rightrot(root);
+        else {
+            root->left = leftrot(root->left);
+            return rightrot(root);
         }
     }
-    update_height(node);    /* same logic as last half of insert */
-    if (balance(node) > 1) {
-        if (balance(node->right) < -1)
-            node->right = rightrot(node->right);
-        node = leftrot(node);
-    } else if (balance(node) < -1) {
-        if (balance(node->left) > 1)
-            node->left = leftrot(node->left);
-        node = rightrot(node);
-    }
-    return node;
+    return root;
 }
 
 int balanced(struct Node *root)
